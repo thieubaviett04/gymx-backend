@@ -6,6 +6,10 @@ using GymX.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using GymX.Application.Common.Interfaces.Authencation;
+using GymX.Application.Common.Interfaces.Repositories;
+using GymX.Infrastructure.Repositories;
+using GymX.Infrastructure.Services.Authentication;
 
 namespace GymX.Infrastructure
 {
@@ -35,12 +39,17 @@ namespace GymX.Infrastructure
                         maxRetryDelay: TimeSpan.FromSeconds(30),
                         errorCodesToAdd: null);
                 });
-                var auditInterceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
-                var softDeleteInterceptor = sp.GetRequiredService<SoftDeleteInterceptor>();
-                options.AddInterceptors(auditInterceptor, softDeleteInterceptor);
+                
             });
             services.AddScoped<IApplicationDbContext>(sp =>
                 sp.GetRequiredService<ApplicationDbContext>());
+
+            services.AddScoped<IUnitOfWork>(sp =>
+                sp.GetRequiredService<ApplicationDbContext>());
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IGoogleAuthService, GoogleAuthService>();    
+            services.AddScoped<IJwtService, JwtService>();
+
             return services;
         }
     }

@@ -9,7 +9,6 @@ namespace GymX.Api.Common.Extensions
         {
             services.AddEndpointsApiExplorer();
             services.AddControllers();
-            services.AddTransient<ExceptionHandlingMiddleware>();
 
             services.AddLocalization();
 
