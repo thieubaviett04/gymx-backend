@@ -1,4 +1,4 @@
-﻿using GymX.Application.Common.Interfaces;
+using GymX.Application.Common.Interfaces;
 using GymX.Infrastructure.Options;
 using GymX.Infrastructure.Persistence;
 using GymX.Infrastructure.Persistence.Interceptors;
@@ -49,7 +49,7 @@ namespace GymX.Infrastructure
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IGoogleAuthService, GoogleAuthService>();    
             services.AddScoped<IJwtService, JwtService>();
-
+            services.AddScoped<IEmailService, EmailService>();
             return services;
         }
     }
