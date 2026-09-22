@@ -1,7 +1,6 @@
 using GymX.Application.Features.Auth.Commands.GoogleLogin;
-using GymX.Application.Common.Interfaces;
 using MediatR;
-using Microsoft.AspNetCore.Mvc; 
+using Microsoft.AspNetCore.Mvc;
 
 namespace GymX.Api.Controllers.AuthController
 {
@@ -15,15 +14,13 @@ namespace GymX.Api.Controllers.AuthController
             var result = await sender.Send(command, cancellationToken);
 
             if (result.IsSuccess)
-            {
                 return Ok(result.Value);
-            }
 
             return result.Error.Code switch
             {
-                "Auth.GoogleLogin" => Unauthorized(new {error = result.Error}),
-                "Auth.EmailExists" => Conflict(new {error = result.Error}),
-                _ => BadRequest(new {error = result.Error})
+                "Auth.GoogleLogin" => Unauthorized(new { error = result.Error }),
+                "Auth.EmailExists" => Conflict(new { error = result.Error }),
+                _ => BadRequest(new { error = result.Error })
             };
         }
     }

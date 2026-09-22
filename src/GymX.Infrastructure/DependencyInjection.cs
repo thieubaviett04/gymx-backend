@@ -50,6 +50,14 @@ namespace GymX.Infrastructure
             services.AddScoped<IGoogleAuthService, GoogleAuthService>();    
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IEmailService, EmailService>();
+
+            // Face++ Face Recognition
+            services.Configure<FacePlusPlusOptions>(configuration.GetSection(FacePlusPlusOptions.SectionName));
+            services.AddHttpClient<IFaceRecognitionService, FaceRecognitionService>(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
+
             return services;
         }
     }
