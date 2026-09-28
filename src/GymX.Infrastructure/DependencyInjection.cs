@@ -49,6 +49,7 @@ namespace GymX.Infrastructure
             services.AddScoped<IUnitOfWork>(sp =>
                 sp.GetRequiredService<ApplicationDbContext>());
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IInvoiceRepository, InvoiceRepository>();
             services.AddScoped<IGoogleAuthService, GoogleAuthService>();    
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IEmailService, EmailService>();
