@@ -1,4 +1,5 @@
-﻿using GymX.Api.Common.Middleware;
+using GymX.Api.Common.Middleware;
+using GymX.Api.Hubs;
 using Microsoft.OpenApi;
 
 namespace GymX.Api.Common.Extensions
@@ -24,11 +25,16 @@ namespace GymX.Api.Common.Extensions
             {
                 options.AddPolicy("DefaultCorsPolicy", policy =>
                 {
-                    policy.AllowAnyOrigin()
+                    // SignalR yêu cầu AllowCredentials() nên không dùng AllowAnyOrigin()
+                    policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
                            .AllowAnyMethod()
-                           .AllowAnyHeader();
+                           .AllowAnyHeader()
+                           .AllowCredentials();
                 });
             });
+
+            // Đăng ký SignalR
+            services.AddSignalR();
 
             services.AddSwaggerGen(c =>
             {
@@ -79,6 +85,9 @@ namespace GymX.Api.Common.Extensions
             app.UseCors("DefaultCorsPolicy");
             app.UseAuthentication();
             app.UseAuthorization();
+
+            // Map SignalR Hub
+            app.MapHub<PaymentHub>("/hubs/payment");
 
             return app;
         }

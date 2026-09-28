@@ -1,5 +1,6 @@
-﻿using GymX.Application.Common.Interfaces;
+using GymX.Application.Common.Interfaces;
 using GymX.Domain.Entities.Identity;
+using GymX.Domain.Entities.Payment;
 using GymX.Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
@@ -27,5 +28,6 @@ namespace GymX.Infrastructure.Persistence
         public DbSet<UserRole> UserRoles => Set<UserRole>();
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
         public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+        public DbSet<Invoice> Invoices => Set<Invoice>();
     }
  }
