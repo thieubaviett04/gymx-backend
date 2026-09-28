@@ -10,6 +10,8 @@ using GymX.Application.Common.Interfaces.Authencation;
 using GymX.Application.Common.Interfaces.Repositories;
 using GymX.Infrastructure.Repositories;
 using GymX.Infrastructure.Services.Authentication;
+using Microsoft.Extensions.Options;
+using PayOS;
 
 namespace GymX.Infrastructure
 {
@@ -57,6 +59,15 @@ namespace GymX.Infrastructure
             {
                 client.Timeout = TimeSpan.FromSeconds(30);
             });
+
+            // PayOS Payment Gateway
+            services.Configure<GymX.Infrastructure.Options.PayOSOptions>(configuration.GetSection(GymX.Infrastructure.Options.PayOSOptions.SectionName));
+            services.AddSingleton<PayOSClient>(sp =>
+            {
+                var opts = sp.GetRequiredService<IOptions<GymX.Infrastructure.Options.PayOSOptions>>().Value;
+                return new PayOSClient(opts.ClientId, opts.ApiKey, opts.ChecksumKey);
+            });
+            services.AddScoped<IPaymentService, PaymentService>();
 
             return services;
         }
