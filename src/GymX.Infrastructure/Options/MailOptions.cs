@@ -4,6 +4,7 @@ namespace GymX.Infrastructure.Options
     public class MailOptions
     {
         public const string SectionName = "Mail";
+        public string DisplayName { get; set; } = string.Empty;
         public string From { get; set; } = string.Empty;
         public string SmtpServer { get; set; } = string.Empty;
         public int Port { get; set; } = 587;

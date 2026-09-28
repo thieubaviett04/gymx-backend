@@ -1,4 +1,4 @@
-﻿using GymX.Application.Common.Interfaces;
+using GymX.Application.Common.Interfaces;
 using GymX.Infrastructure.Options;
 using GymX.Infrastructure.Persistence;
 using GymX.Infrastructure.Persistence.Interceptors;
@@ -6,6 +6,12 @@ using GymX.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using GymX.Application.Common.Interfaces.Authencation;
+using GymX.Application.Common.Interfaces.Repositories;
+using GymX.Infrastructure.Repositories;
+using GymX.Infrastructure.Services.Authentication;
+using Microsoft.Extensions.Options;
+using PayOS;
 
 namespace GymX.Infrastructure
 {
@@ -35,12 +41,35 @@ namespace GymX.Infrastructure
                         maxRetryDelay: TimeSpan.FromSeconds(30),
                         errorCodesToAdd: null);
                 });
-                var auditInterceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
-                var softDeleteInterceptor = sp.GetRequiredService<SoftDeleteInterceptor>();
-                options.AddInterceptors(auditInterceptor, softDeleteInterceptor);
+                
             });
             services.AddScoped<IApplicationDbContext>(sp =>
                 sp.GetRequiredService<ApplicationDbContext>());
+
+            services.AddScoped<IUnitOfWork>(sp =>
+                sp.GetRequiredService<ApplicationDbContext>());
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+            services.AddScoped<IGoogleAuthService, GoogleAuthService>();    
+            services.AddScoped<IJwtService, JwtService>();
+            services.AddScoped<IEmailService, EmailService>();
+
+            // Face++ Face Recognition
+            services.Configure<FacePlusPlusOptions>(configuration.GetSection(FacePlusPlusOptions.SectionName));
+            services.AddHttpClient<IFaceRecognitionService, FaceRecognitionService>(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
+
+            // PayOS Payment Gateway
+            services.Configure<GymX.Infrastructure.Options.PayOSOptions>(configuration.GetSection(GymX.Infrastructure.Options.PayOSOptions.SectionName));
+            services.AddSingleton<PayOSClient>(sp =>
+            {
+                var opts = sp.GetRequiredService<IOptions<GymX.Infrastructure.Options.PayOSOptions>>().Value;
+                return new PayOSClient(opts.ClientId, opts.ApiKey, opts.ChecksumKey);
+            });
+            services.AddScoped<IPaymentService, PaymentService>();
+
             return services;
         }
     }

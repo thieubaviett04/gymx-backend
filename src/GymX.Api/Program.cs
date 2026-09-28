@@ -13,4 +13,8 @@ builder.Services.AddApiServices(builder.Configuration);
 var app = builder.Build();
 
 app.UseApiMiddleware();
+
+app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
+app.MapControllers();
+
 app.Run();

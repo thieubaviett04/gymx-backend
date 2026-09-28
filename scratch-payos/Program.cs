@@ -1,0 +1,1 @@
+using System; using System.Linq; using PayOS.Models.V2.PaymentRequests; class P { static void Main() { foreach(var p in typeof(CreatePaymentLinkRequest).GetProperties()) { Console.WriteLine(p.PropertyType.Name + " " + p.Name); } } }
