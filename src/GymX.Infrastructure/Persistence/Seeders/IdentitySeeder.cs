@@ -26,7 +26,11 @@ public static class IdentitySeeder
         {
             // Bcrypt hash for "Admin@123"
             var adminUser = User.CreateWithPassword("admin@gymx.vn", "Admin GymX", "$2a$11$0H0xVd/n2.VbV49d1.2zL.D1F82fG4d9E47c0.k6w8V1QvW41");
+            
+            // Cập nhật thêm SĐT, Giới tính, Ngày sinh cho Admin
+            adminUser.UpdateProfile("0987654321", "MALE", new DateOnly(1990, 1, 1), "Hà Nội, Việt Nam");
             adminUser.VerifyEmail();
+            
             await context.Users.AddAsync(adminUser);
             await context.SaveChangesAsync();
 
