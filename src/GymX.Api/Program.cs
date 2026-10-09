@@ -17,4 +17,12 @@ app.UseApiMiddleware();
 app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
 app.MapControllers();
 
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<GymX.Infrastructure.Persistence.ApplicationDbContext>();
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    await GymX.Infrastructure.Persistence.ApplicationDbContextSeed.SeedSampleDataAsync(context, logger);
+}
+
 app.Run();
