@@ -1,7 +1,8 @@
 using GymX.Application.Common.Interfaces;
 using GymX.Application.Common.Interfaces.Repositories;
 using GymX.Domain.Common.Models;
-using GymX.Domain.Entities.Payment;
+using GymX.Domain.Entities.Finance;
+using GymX.Domain.Constants;
 using MediatR;
 
 using Microsoft.Extensions.Logging;
@@ -19,7 +20,7 @@ public class HandlePaymentWebhookCommandHandler(
 {
     public async Task<Result<bool>> Handle(HandlePaymentWebhookCommand request, CancellationToken cancellationToken)
     {
-        var invoice = await invoiceRepository.GetByOrderCodeAsync(request.OrderCode, cancellationToken);
+        var invoice = await invoiceRepository.GetByInvoiceNumberAsync(request.OrderCode.ToString(), cancellationToken);
         if (invoice == null)
         {
             logger.LogWarning("Webhook PayOS nhận được OrderCode {OrderCode} không tồn tại trong hệ thống.", request.OrderCode);

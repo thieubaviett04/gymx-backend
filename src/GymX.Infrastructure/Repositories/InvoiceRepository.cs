@@ -1,5 +1,5 @@
 using GymX.Application.Common.Interfaces.Repositories;
-using GymX.Domain.Entities.Payment;
+using GymX.Domain.Entities.Finance;
 using GymX.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,9 +12,9 @@ public class InvoiceRepository(ApplicationDbContext context) : IInvoiceRepositor
         return await context.Invoices.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
-    public async Task<Invoice?> GetByOrderCodeAsync(long orderCode, CancellationToken cancellationToken = default)
+    public async Task<Invoice?> GetByInvoiceNumberAsync(string invoiceNumber, CancellationToken cancellationToken = default)
     {
-        return await context.Invoices.FirstOrDefaultAsync(x => x.OrderCode == orderCode, cancellationToken);
+        return await context.Invoices.FirstOrDefaultAsync(x => x.InvoiceNumber == invoiceNumber, cancellationToken);
     }
 
     public async Task AddAsync(Invoice invoice, CancellationToken cancellationToken = default)
