@@ -1,7 +1,7 @@
 using GymX.Application.Common.Interfaces;
 using GymX.Application.Common.Interfaces.Repositories;
 using GymX.Domain.Common.Models;
-using GymX.Domain.Entities.Payment;
+using GymX.Domain.Entities.Finance;
 using MediatR;
 
 namespace GymX.Application.Features.Payments.Commands.CreateInvoice;
@@ -42,12 +42,14 @@ public class CreateInvoiceCommandHandler(
 
         // 3. Lưu Invoice vào DB với trạng thái Pending
         var invoice = Invoice.Create(
-            orderCode: orderCode,
-            amount: request.Amount,
-            description: request.Description,
-            paymentLinkId: paymentResult.Value!.PaymentLinkId,
-            checkoutUrl: paymentResult.Value.CheckoutUrl,
-            memberId: request.MemberId
+            invoiceNumber: orderCode.ToString(),
+            referenceType: "GENERAL",
+            referenceId: Guid.NewGuid(), // Placeholder
+            subtotal: request.Amount,
+            totalAmount: request.Amount,
+            memberId: request.MemberId,
+            customerName: request.BuyerName,
+            customerPhone: request.BuyerPhone
         );
 
         await invoiceRepository.AddAsync(invoice, cancellationToken);
