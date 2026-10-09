@@ -1,4 +1,4 @@
-﻿using GymX.Domain.Common.Models;
+using GymX.Domain.Common.Models;
 using GymX.Domain.Contracts;
 using GymX.Domain.Constants;
 
@@ -58,5 +58,14 @@ namespace GymX.Domain.Entities.Identity
         // Cập nhật mật khẩu mới sau khi reset — chỉ thay hash, không lưu plaintext
         public void UpdatePassword(string newPasswordHash) =>
             PasswordHash = newPasswordHash;
+
+        // Cập nhật thông tin cá nhân cơ bản
+        public void UpdateProfile(string? phoneNumber, string? gender, DateOnly? dateOfBirth, string? address = null)
+        {
+            PhoneNumber = phoneNumber;
+            Gender = gender;
+            DateOfBirth = dateOfBirth;
+            Address = address;
+        }
     }
 }
