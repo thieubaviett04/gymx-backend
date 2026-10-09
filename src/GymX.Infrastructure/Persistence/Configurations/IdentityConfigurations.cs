@@ -1,9 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using GymX.Domain.Entities.Identity;
 
 
-namespace GymX.Infrastructure.Persistence.Configuration
+namespace GymX.Infrastructure.Persistence.Configurations
 {
     // Cấu hình EF Core cho bang User
     public class UserConfiguration : IEntityTypeConfiguration<User>
