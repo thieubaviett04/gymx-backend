@@ -1,4 +1,4 @@
-﻿using GymX.Domain.Common.Models;
+using GymX.Domain.Common.Models;
 
 namespace GymX.Domain.Entities.Identity
 {
@@ -7,6 +7,7 @@ namespace GymX.Domain.Entities.Identity
     {
         public Guid UserId { get; private set; }
         // Chỉ lưu hash của token, không lưu giá trị gốc — tránh lộ token nếu DB bị tấn công
+        public Guid SessionId { get; private set; }
         public string TokenHash { get; private set; } = string.Empty;
         public DateTime ExpiresAt { get; private set; }
         public DateTime? RevokedAt { get; private set; }
@@ -23,8 +24,8 @@ namespace GymX.Domain.Entities.Identity
         protected RefreshToken() { }
 
         // ExpiresAt truyền vào từ config (ví dụ: DateTime.UtcNow.AddDays(7))
-        public static RefreshToken Create(Guid userId, string tokenHash, DateTime expiresAt) =>
-            new() { UserId = userId, TokenHash = tokenHash, ExpiresAt = expiresAt };
+        public static RefreshToken Create(Guid userId, string tokenHash, DateTime expiresAt, Guid sessionId) =>
+            new() { UserId = userId, TokenHash = tokenHash, ExpiresAt = expiresAt, SessionId = sessionId };
 
         // Thu hồi token — ghi lại Id token mới thay thế nếu là rotation
         public void Revoke(Guid? replacedByTokenId = null)
