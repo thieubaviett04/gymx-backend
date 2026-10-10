@@ -24,6 +24,7 @@ namespace GymX.Infrastructure
             services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
             services.Configure<RedisOptions>(configuration.GetSection(RedisOptions.SectionName));
             services.Configure<MailOptions>(configuration.GetSection(MailOptions.SectionName));
+            services.AddMemoryCache();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
@@ -48,10 +49,13 @@ namespace GymX.Infrastructure
 
             services.AddScoped<IUnitOfWork>(sp =>
                 sp.GetRequiredService<ApplicationDbContext>());
+            services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IRoleRepository, RoleRepository>();
             services.AddScoped<IInvoiceRepository, InvoiceRepository>();
             services.AddScoped<IGoogleAuthService, GoogleAuthService>();    
             services.AddScoped<IJwtService, JwtService>();
+            services.AddScoped<IPasswordHasher, PasswordHasher>();
             services.AddScoped<IEmailService, EmailService>();
 
             // Face++ Face Recognition
