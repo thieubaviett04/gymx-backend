@@ -1,4 +1,5 @@
 using GymX.Application.Features.Auth.Commands.GoogleLogin;
+using GymX.Application.Features.Auth.Commands.Login;
 using GymX.Application.Features.Auth.Commands.Register;
 using GymX.Application.Features.Auth.Commands.VerifyEmail;
 using MediatR;
@@ -15,8 +16,7 @@ namespace GymX.Api.Controllers.AuthController
         {
             var result = await sender.Send(command, cancellationToken);
 
-            if (result.IsSuccess)
-                return Ok(result.Value);
+            if (result.IsSuccess) return Ok(new { success = true, data = result.Value });
 
             return result.Error.Code switch
             {
@@ -46,15 +46,29 @@ namespace GymX.Api.Controllers.AuthController
         public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailCommand command, CancellationToken cancellationToken)
         {
             var result = await sender.Send(command, cancellationToken);
-
-            if (result.IsSuccess)
-                return Ok(new { message = result.Value });
+            if (result.IsSuccess) return Ok(new { message = result.Value });
 
             return result.Error.Code switch
             {
                 "Auth.InvalidOtp" => BadRequest(new { error = result.Error }),
                 "Auth.AlreadyVerified" => Conflict(new { error = result.Error }),
                 "Auth.UserNotFound" => NotFound(new { error = result.Error }),
+                _ => BadRequest(new { error = result.Error })
+            };
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginCommand command, CancellationToken cancellationToken)
+        {
+            var result = await sender.Send(command, cancellationToken);
+            if (result.IsSuccess) return Ok(new { success = true, data = result.Value });
+
+            return result.Error.Code switch
+            {
+                "Auth.InvalidCredentials" => Unauthorized(new { error = result.Error }),
+                "Auth.UnverifiedEmail" => BadRequest(new { error = result.Error }),
+                "Auth.AccountLocked" => BadRequest(new { error = result.Error }),
+                "Auth.AccountInactive" => BadRequest(new { error = result.Error }),
                 _ => BadRequest(new { error = result.Error })
             };
         }

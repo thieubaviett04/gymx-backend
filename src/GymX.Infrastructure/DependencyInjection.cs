@@ -47,8 +47,7 @@ namespace GymX.Infrastructure
             services.AddScoped<IApplicationDbContext>(sp =>
                 sp.GetRequiredService<ApplicationDbContext>());
 
-            services.AddScoped<IUnitOfWork>(sp =>
-                sp.GetRequiredService<ApplicationDbContext>());
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IRoleRepository, RoleRepository>();
