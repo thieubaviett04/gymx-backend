@@ -78,6 +78,7 @@ namespace GymX.Api.Common.Extensions
                 {
                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "GymX Management System API v1");
                     c.DisplayRequestDuration();
+                    c.DefaultModelsExpandDepth(-1);
                 });
             }
 

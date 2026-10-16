@@ -5,7 +5,6 @@ using GymX.Application.Common.Interfaces.Authencation;
 using GymX.Application.Common.Interfaces.Repositories;
 using GymX.Application.Common.Models.Authentication;
 using GymX.Domain.Common.Models;
-using GymX.Domain.Constants;
 using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 

@@ -1,12 +1,6 @@
-using FluentValidation;
-using GymX.Application.Common.Interfaces;
-using GymX.Application.Common.Interfaces.Authencation;
-using GymX.Application.Common.Interfaces.Repositories;
+
 using GymX.Domain.Common.Models;
-using GymX.Domain.Constants;
-using GymX.Domain.Entities.Identity;
 using MediatR;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace GymX.Application.Features.Auth.Commands.Register;
 
