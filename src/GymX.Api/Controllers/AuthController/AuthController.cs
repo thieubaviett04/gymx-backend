@@ -1,14 +1,18 @@
+using System.Security.Claims;
 using GymX.Application.Features.Auth.Commands.ForgotPassword;
 using GymX.Application.Features.Auth.Commands.ResetPassword;
 using GymX.Application.Features.Auth.Commands.GoogleLogin;
 using GymX.Application.Features.Auth.Commands.Login;
 using GymX.Application.Features.Auth.Commands.Register;
 using GymX.Application.Features.Auth.Commands.VerifyEmail;
-using MediatR;
-using Microsoft.AspNetCore.Mvc;
 using GymX.Application.Features.Auth.Commands.VerifyOTP;
 using GymX.Application.Features.Auth.Commands.RefreshTokens;
 using GymX.Application.Features.Auth.Commands.Logout;
+using GymX.Domain.Constants;
+using GymX.Domain.Constants.Identity;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace GymX.Api.Controllers.AuthController
 {
@@ -37,7 +41,7 @@ namespace GymX.Api.Controllers.AuthController
             var result = await sender.Send(command, cancellationToken);
 
             if (result.IsSuccess)
-                return Ok(result.Value); // Value is RegisterResponse
+                return Ok(result.Value);
 
             return result.Error.Code switch
             {
@@ -51,13 +55,14 @@ namespace GymX.Api.Controllers.AuthController
         public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailCommand command, CancellationToken cancellationToken)
         {
             var result = await sender.Send(command, cancellationToken);
-            if (result.IsSuccess) return Ok(new { message = result.Value });
+            if (result.IsSuccess) return Ok(new { success = true, data = result.Value });
 
             return result.Error.Code switch
             {
                 "Auth.InvalidOtp" => BadRequest(new { error = result.Error }),
-                "Auth.AlreadyVerified" => Conflict(new { error = result.Error }),
-                "Auth.UserNotFound" => NotFound(new { error = result.Error }),
+                "Auth.EmailExists" => Conflict(new { error = result.Error }),
+                "Auth.PhoneExists" => Conflict(new { error = result.Error }),
+                "Auth.RoleNotFound" => NotFound(new { error = result.Error }),
                 _ => BadRequest(new { error = result.Error })
             };
         }
@@ -135,6 +140,31 @@ namespace GymX.Api.Controllers.AuthController
             if (result.IsSuccess) return Ok(new { message = result.Value });
 
             return BadRequest(new { error = result.Error });
+        }
+
+        [Authorize]
+        [HttpGet("profile")]
+        public IActionResult GetCurrentUser()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            var fullName = User.FindFirst("fullName")?.Value;
+            var roles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            return Ok(new
+            {
+                userId,
+                email,
+                fullName,
+                roles
+            });
+        }
+
+        [Authorize(Policy = PolicyNames.RequireAdmin)]
+        [HttpGet("admin-only")]
+        public IActionResult AdminOnlyEndpoint()
+        {
+            return Ok(new { message = "Xin chào Admin! Bạn có toàn quyền truy cập hệ thống GymX." });
         }
     }
 }
