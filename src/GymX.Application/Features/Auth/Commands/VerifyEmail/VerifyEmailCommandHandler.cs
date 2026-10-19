@@ -1,9 +1,12 @@
 using GymX.Application.Common.Interfaces;
+using GymX.Application.Common.Interfaces.Authencation;
 using GymX.Application.Common.Interfaces.Repositories;
+using GymX.Application.Common.Models.Authentication;
 using GymX.Application.Features.Auth.Commands.Register;
 using GymX.Domain.Common.Models;
 using GymX.Domain.Constants;
 using GymX.Domain.Entities.Identity;
+using GymX.Domain.Entities.Members;
 using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -12,69 +15,78 @@ namespace GymX.Application.Features.Auth.Commands.VerifyEmail;
 public class VerifyEmailCommandHandler(
     IUserRepository userRepository,
     IRoleRepository roleRepository,
-    IGenericRepository<UserRole> userRoleRepository,
+    IRefreshTokenRepository refreshTokenRepository,
+    IGenericRepository<Member> memberRepository,
+    IJwtService jwtService,
     IMemoryCache memoryCache,
     IUnitOfWork unitOfWork)
-    : IRequestHandler<VerifyEmailCommand, Result<string>>
+    : IRequestHandler<VerifyEmailCommand, Result<AuthTokenDto>>
 {
-    public async Task<Result<string>> Handle(VerifyEmailCommand request, CancellationToken cancellationToken)
+    public async Task<Result<AuthTokenDto>> Handle(VerifyEmailCommand request, CancellationToken cancellationToken)
     {
-        // 1. Kiểm tra OTP và dữ liệu Limbo trong Cache
         var cacheKey = $"OTP_VerifyEmail_{request.Email}";
         if (!memoryCache.TryGetValue(cacheKey, out PendingRegistrationCacheItem? pendingData) || pendingData is null)
         {
-            return Result.Failure<string>(Error.Validation("Auth.InvalidOtp", "Mã OTP đã hết hạn hoặc không tồn tại. Vui lòng đăng ký lại."));
+            return Result.Failure<AuthTokenDto>(Error.Validation("Auth.InvalidOtp", "Mã OTP đã hết hạn hoặc không tồn tại. Vui lòng đăng ký lại."));
         }
 
         if (pendingData.OtpCode != request.OtpCode)
         {
-            return Result.Failure<string>(Error.Validation("Auth.InvalidOtp", "Mã OTP không chính xác."));
+            return Result.Failure<AuthTokenDto>(Error.Validation("Auth.InvalidOtp", "Mã OTP không chính xác."));
         }
 
-
-        // 2. Double-check: Đảm bảo trong 5 phút vừa qua không có ai nẫng tay trên Email/SĐT này
         var existingUser = await userRepository.GetByEmailAsync(pendingData.Email, cancellationToken);
         if (existingUser is not null)
         {
-            return Result.Failure<string>(Error.Conflict("Auth.EmailExists", "Email này vừa được đăng ký bởi người khác."));
+            return Result.Failure<AuthTokenDto>(Error.Conflict("Auth.EmailExists", "Email này đã được sử dụng."));
         }
 
         var existingPhone = await userRepository.GetByPhoneNumberAsync(pendingData.PhoneNumber, cancellationToken);
         if (existingPhone is not null)
         {
-            return Result.Failure<string>(Error.Conflict("Auth.PhoneExists", "Số điện thoại này vừa được sử dụng bởi người khác."));
+            return Result.Failure<AuthTokenDto>(Error.Conflict("Auth.PhoneExists", "Số điện thoại này đã được sử dụng."));
         }
 
-
-        // 3. Khởi tạo tài khoản chính thức (Trạng thái mặc định: PENDING_VERIFICATION)
-        var user = User.CreateWithPassword(pendingData.Email, pendingData.FullName, pendingData.PasswordHash);
-        user.UpdateProfile(pendingData.PhoneNumber, null, null);
-
-
-        // 4. Đánh dấu đã xác thực Email ngay lập tức
-        user.VerifyEmail();
-        
-        await userRepository.AddAsync(user, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-
-        // 5. Cấp quyền MEMBER
         var memberRole = await roleRepository.GetByCodeAsync(RoleCode.Member, cancellationToken);
         if (memberRole is null)
         {
-            return Result.Failure<string>(Error.NotFound("Auth.RoleNotFound", "Hệ thống lỗi: Không tìm thấy Role MEMBER."));
+            return Result.Failure<AuthTokenDto>(Error.NotFound("Auth.RoleNotFound", "Hệ thống lỗi: Không tìm thấy Role MEMBER."));
         }
 
-        var userRole = UserRole.Create(user.Id, memberRole.Id);
-        await userRoleRepository.AddAsync(userRole, cancellationToken);
+        var user = User.CreateWithPassword(pendingData.Email, pendingData.FullName, pendingData.PasswordHash);
+        user.UpdateProfile(pendingData.PhoneNumber, null, null);
+        user.VerifyEmail();
+        user.AssignRole(memberRole.Id);
+
+        var memberCode = $"MEM{DateTime.UtcNow:yyyyMMdd}{Random.Shared.Next(1000, 9999)}";
+        var member = Member.Create(user.Id, memberCode, DateOnly.FromDateTime(DateTime.UtcNow));
+
+        var roles = new List<string> { RoleCode.Member };
+        var jwtResult = jwtService.GenerateTokens(user, roles);
+
+        var refreshTokenEntity = RefreshToken.Create(
+            user.Id,
+            jwtResult.RefreshToken,
+            jwtResult.RefreshTokenExpiresAt,
+            jwtResult.SessionId);
+
+        await userRepository.AddAsync(user, cancellationToken);
+        await memberRepository.AddAsync(member, cancellationToken);
+        await refreshTokenRepository.AddAsync(refreshTokenEntity, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        
-        
-        // 6. Xóa OTP khỏi Cache để tránh bị dùng lại (Replay Attack)
+
         memoryCache.Remove(cacheKey);
 
-
-        // 7. Hoàn thành
-        return Result.Success("Xác thực email thành công! Chào mừng bạn đến với GymX.");
+        return Result.Success(new AuthTokenDto
+        {
+            AccessToken = jwtResult.AccessToken,
+            RefreshToken = jwtResult.RefreshToken,
+            ExpiresAt = jwtResult.AccessTokenExpiresIn,
+            Roles = roles,
+            UserId = user.Id,
+            Email = user.Email,
+            FullName = user.FullName,
+            AvatarUrl = user.AvatarUrl
+        });
     }
 }

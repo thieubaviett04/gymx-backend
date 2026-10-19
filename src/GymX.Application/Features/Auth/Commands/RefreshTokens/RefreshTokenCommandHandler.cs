@@ -61,7 +61,12 @@ public class RefreshTokenCommandHandler(
         {
             AccessToken = jwtResult.AccessToken,
             RefreshToken = jwtResult.RefreshToken,
-            ExpiresAt = jwtResult.AccessTokenExpiresIn
+            ExpiresAt = jwtResult.AccessTokenExpiresIn,
+            Roles = roles,
+            UserId = user.Id,
+            Email = user.Email,
+            FullName = user.FullName,
+            AvatarUrl = user.AvatarUrl
         });
     }
 }

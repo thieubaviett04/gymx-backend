@@ -68,6 +68,21 @@ namespace GymX.Domain.Entities.Identity
             Address = address;
         }
 
+        public void AssignRole(Guid roleId)
+        {
+            if (UserRoles.Any(ur => ur.RoleId == roleId)) return;
+            UserRoles.Add(UserRole.Create(Id, roleId));
+        }
+
+        public void RemoveRole(Guid roleId)
+        {
+            var userRole = UserRoles.FirstOrDefault(ur => ur.RoleId == roleId);
+            if (userRole is not null)
+            {
+                UserRoles.Remove(userRole);
+            }
+        }
+
         public Result CanLogin()
         {
             return Status switch

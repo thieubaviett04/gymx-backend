@@ -21,27 +21,28 @@ public static class IdentitySeeder
             await context.SaveChangesAsync();
         }
 
-        // 2. Seed Admin User
-        if (!await context.Users.AnyAsync(u => u.Email == "admin@gymx.vn"))
+        var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Email == "admin@gymx.vn");
+        if (adminUser is null)
         {
-            // Bcrypt hash for "Admin@123"
-            var adminUser = User.CreateWithPassword("admin@gymx.vn", "Admin GymX", "$2a$11$0H0xVd/n2.VbV49d1.2zL.D1F82fG4d9E47c0.k6w8V1QvW41");
+            adminUser = User.CreateWithPassword("admin@gymx.vn", "Admin GymX", BCrypt.Net.BCrypt.HashPassword("Admin@123", 11));
             
-            // Cập nhật thêm SĐT, Giới tính, Ngày sinh cho Admin
             adminUser.UpdateProfile("0987654321", "MALE", new DateOnly(1990, 1, 1), "Hà Nội, Việt Nam");
             adminUser.VerifyEmail();
             
             await context.Users.AddAsync(adminUser);
             await context.SaveChangesAsync();
 
-            // Add Admin Role
             var adminRole = await context.Roles.FirstAsync(r => r.Code == "ADMIN");
             await context.UserRoles.AddAsync(UserRole.Create(adminUser.Id, adminRole.Id));
             
-            // Add Employee record for Admin
             var adminEmployee = Employee.Create(adminUser.Id, "EMP0001", "ADMIN", 20000000, DateOnly.FromDateTime(DateTime.UtcNow));
             await context.Employees.AddAsync(adminEmployee);
 
+            await context.SaveChangesAsync();
+        }
+        else
+        {
+            adminUser.UpdatePassword(BCrypt.Net.BCrypt.HashPassword("Admin@123", 11));
             await context.SaveChangesAsync();
         }
     }

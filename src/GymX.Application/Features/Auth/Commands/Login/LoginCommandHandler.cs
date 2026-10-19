@@ -1,4 +1,4 @@
-﻿
+
 using GymX.Application.Common.Interfaces;
 using GymX.Domain.Entities.Identity;
 using GymX.Application.Common.Interfaces.Authencation;
@@ -65,7 +65,12 @@ namespace GymX.Application.Features.Auth.Commands.Login
             {
                 AccessToken = jwtResult.AccessToken,
                 RefreshToken = jwtResult.RefreshToken,
-                ExpiresAt = jwtResult.AccessTokenExpiresIn
+                ExpiresAt = jwtResult.AccessTokenExpiresIn,
+                Roles = roles,
+                UserId = user.Id,
+                Email = user.Email,
+                FullName = user.FullName,
+                AvatarUrl = user.AvatarUrl
             });
         }
     }
