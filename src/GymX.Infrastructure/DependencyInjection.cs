@@ -56,6 +56,7 @@ namespace GymX.Infrastructure
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IPasswordHasher, PasswordHasher>();
             services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
             // Face++ Face Recognition
             services.Configure<FacePlusPlusOptions>(configuration.GetSection(FacePlusPlusOptions.SectionName));

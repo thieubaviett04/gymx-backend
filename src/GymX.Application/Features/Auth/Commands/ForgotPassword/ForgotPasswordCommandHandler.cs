@@ -25,8 +25,7 @@ namespace GymX.Application.Features.Auth.Commands.ForgotPassword
             });
 
             var otpCode = RandomNumberGenerator.GetInt32(100000, 999999).ToString();
-            var cacheKey = $"OTP_ResetPassword_{request.Email}";
-
+            var cacheKey = $"OPT_ResetPassword_{request.Email}";
             memoryCache.Set(cacheKey, otpCode, TimeSpan.FromMinutes(5));
 
             await emailService.SendEmailAsync(
