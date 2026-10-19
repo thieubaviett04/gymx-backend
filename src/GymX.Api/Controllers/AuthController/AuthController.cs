@@ -7,6 +7,8 @@ using GymX.Application.Features.Auth.Commands.VerifyEmail;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using GymX.Application.Features.Auth.Commands.VerifyOTP;
+using GymX.Application.Features.Auth.Commands.RefreshTokens;
+using GymX.Application.Features.Auth.Commands.Logout;
 
 namespace GymX.Api.Controllers.AuthController
 {
@@ -104,6 +106,33 @@ namespace GymX.Api.Controllers.AuthController
         {
             var result = await sender.Send(command, cancellationToken);
             if (result.IsSuccess) return Ok(result.Value);
+
+            return BadRequest(new { error = result.Error });
+        }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenCommand command, CancellationToken cancellationToken)
+        {
+            var result = await sender.Send(command, cancellationToken);
+            if (result.IsSuccess) return Ok(new { success = true, data = result.Value });
+
+            return result.Error.Code switch
+            {
+                "Auth.InvalidRefreshToken" => Unauthorized(new { error = result.Error }),
+                "Auth.CompromisedToken" => Unauthorized(new { error = result.Error }),
+                "Auth.ExpiredToken" => Unauthorized(new { error = result.Error }),
+                "Auth.UnverifiedEmail" => StatusCode(403, new { error = result.Error }),
+                "Auth.AccountLocked" => StatusCode(403, new { error = result.Error }),
+                "Auth.AccountInactive" => StatusCode(403, new { error = result.Error }),
+                _ => BadRequest(new { error = result.Error })
+            };
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] LogoutCommand command, CancellationToken cancellationToken)
+        {
+            var result = await sender.Send(command, cancellationToken);
+            if (result.IsSuccess) return Ok(new { message = result.Value });
 
             return BadRequest(new { error = result.Error });
         }

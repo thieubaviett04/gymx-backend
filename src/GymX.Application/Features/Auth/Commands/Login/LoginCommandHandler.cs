@@ -21,52 +21,52 @@ namespace GymX.Application.Features.Auth.Commands.Login
     {
         public async Task<Result<AuthTokenDto>> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
-                var user = await userRepository.GetByEmailAsync(request.Email, cancellationToken);
+            var user = await userRepository.GetByEmailAsync(request.Email, cancellationToken);
             
-                if (user is null)
-                {
-                    var cacheKey = $"OTP_VerifyEmail_{request.Email}";
-                    return memoryCache.TryGetValue(cacheKey, out _) 
-                        ? Result.Failure<AuthTokenDto>(Error.Forbidden("Auth.UnverifiedEmail", "Tài khoản chưa xác thực email. Vui lòng xác thực mã OTP gửi về email"))
-                        : Result.Failure<AuthTokenDto>(Error.Unauthorized("Auth.InvalidCredentials", "Email hoặc mật khẩu không chính xác"));
-                }
+            if (user is null)
+            {
+                var cacheKey = $"OTP_VerifyEmail_{request.Email}";
+                return memoryCache.TryGetValue(cacheKey, out _) 
+                    ? Result.Failure<AuthTokenDto>(Error.Forbidden("Auth.UnverifiedEmail", "Tài khoản chưa xác thực email. Vui lòng xác thực mã OTP gửi về email"))
+                    : Result.Failure<AuthTokenDto>(Error.Unauthorized("Auth.InvalidCredentials", "Email hoặc mật khẩu không chính xác"));
+            }
 
-                if (string.IsNullOrEmpty(user.PasswordHash))
-                {
-                    return Result.Failure<AuthTokenDto>(
-                        Error.Unauthorized("Auth.InvalidCredentials", "Tài khoản này được đăng ký bằng Google. Vui lòng đăng nhập bằng Google"));
-                }
+            if (string.IsNullOrEmpty(user.PasswordHash))
+            {
+                return Result.Failure<AuthTokenDto>(
+                    Error.Unauthorized("Auth.InvalidCredentials", "Tài khoản này được đăng ký bằng Google. Vui lòng đăng nhập bằng Google"));
+            }
 
-                var isPasswordValid = passwordHasher.Verify(request.Password, user.PasswordHash);
-                if (!isPasswordValid)
-                {
-                    return Result.Failure<AuthTokenDto>(
-                        Error.Unauthorized("Auth.InvalidCredentials", "Email hoặc mật khẩu không chính xác"));
-                }
+            var isPasswordValid = passwordHasher.Verify(request.Password, user.PasswordHash);
+            if (!isPasswordValid)
+            {
+                return Result.Failure<AuthTokenDto>(
+                    Error.Unauthorized("Auth.InvalidCredentials", "Email hoặc mật khẩu không chính xác"));
+            }
 
-                var resultLogin = user.CanLogin();
-                if (!resultLogin.IsSuccess)
-                {
-                    return Result.Failure<AuthTokenDto>(resultLogin.Error);
-                }
+            var resultLogin = user.CanLogin();
+            if (!resultLogin.IsSuccess)
+            {
+                return Result.Failure<AuthTokenDto>(resultLogin.Error);
+            }
 
             var roles = await userRepository.GetUserRolesAsync(user.Id, cancellationToken);
-                var jwtResult = jwtService.GenerateTokens(user, roles);
-                var refreshTokenEntity = RefreshToken.Create(
-                    user.Id,
-                    jwtResult.RefreshToken,
-                    jwtResult.RefreshTokenExpiresAt,
-                    jwtResult.SessionId);
+            var jwtResult = jwtService.GenerateTokens(user, roles);
+            var refreshTokenEntity = RefreshToken.Create(
+                user.Id,
+                jwtResult.RefreshToken,
+                jwtResult.RefreshTokenExpiresAt,
+                jwtResult.SessionId);
 
-                await refreshTokenRepository.AddAsync(refreshTokenEntity, cancellationToken);
-                await unitOfWork.SaveChangesAsync(cancellationToken);
+            await refreshTokenRepository.AddAsync(refreshTokenEntity, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
 
-                return Result.Success(new AuthTokenDto
-                {
-                    AccessToken = jwtResult.AccessToken,
-                    RefreshToken = jwtResult.RefreshToken,
-                    ExpiresAt = jwtResult.AccessTokenExpiresIn
-                });
+            return Result.Success(new AuthTokenDto
+            {
+                AccessToken = jwtResult.AccessToken,
+                RefreshToken = jwtResult.RefreshToken,
+                ExpiresAt = jwtResult.AccessTokenExpiresIn
+            });
         }
     }
 }

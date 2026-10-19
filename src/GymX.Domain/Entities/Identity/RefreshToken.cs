@@ -33,5 +33,14 @@ namespace GymX.Domain.Entities.Identity
             RevokedAt = DateTime.UtcNow;
             ReplacedByTokenId = replacedByTokenId;
         }
+
+        public Result CanRefresh()
+        {
+            if (IsRevoked) return Result.Failure(Error.Unauthorized("Auth.CompromisedToken", "Phát hiện hành vi bất thường. Vui lòng đăng nhập lại."));
+
+            if (IsExpired) return Result.Failure(Error.Unauthorized("Auth.ExpiredToken", "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."));
+
+            return Result.Success();       
+        }
     }
 }
