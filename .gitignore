@@ -25,3 +25,5 @@
 *.nupkg
 TestResults/
 .aider*
+.agents/mcp_config.json
+skills-lock.json
