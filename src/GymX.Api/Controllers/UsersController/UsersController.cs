@@ -13,9 +13,6 @@ namespace GymX.Api.Controllers.UsersController
     [Authorize]
     public class UsersController(ISender sender) : ControllerBase
     {
-        /// <summary>
-        /// Lấy thông tin hồ sơ của người dùng hiện tại (dùng chung cho mọi actor đã đăng nhập)
-        /// </summary>
         [HttpGet("me")]
         public async Task<IActionResult> GetMyProfile(CancellationToken cancellationToken)
         {
@@ -34,9 +31,6 @@ namespace GymX.Api.Controllers.UsersController
             };
         }
 
-        /// <summary>
-        /// Cập nhật thông tin hồ sơ cá nhân của người dùng hiện tại
-        /// </summary>
         [HttpPut("me")]
         public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateMyProfileCommand command, CancellationToken cancellationToken)
         {
@@ -56,9 +50,6 @@ namespace GymX.Api.Controllers.UsersController
             };
         }
 
-        /// <summary>
-        /// Tải lên và cập nhật ảnh đại diện mới cho người dùng hiện tại
-        /// </summary>
         [HttpPut("me/avatar")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadAvatar(IFormFile file, CancellationToken cancellationToken)
@@ -85,9 +76,6 @@ namespace GymX.Api.Controllers.UsersController
             };
         }
 
-        /// <summary>
-        /// Đổi mật khẩu cho người dùng hiện tại
-        /// </summary>
         [HttpPut("me/change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command, CancellationToken cancellationToken)
         {
