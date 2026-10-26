@@ -67,5 +67,33 @@ namespace GymX.Domain.Entities.Identity
             DateOfBirth = dateOfBirth;
             Address = address;
         }
+
+        public void AssignRole(Guid roleId)
+        {
+            if (UserRoles.Any(ur => ur.RoleId == roleId)) return;
+            UserRoles.Add(UserRole.Create(Id, roleId));
+        }
+
+        public void RemoveRole(Guid roleId)
+        {
+            var userRole = UserRoles.FirstOrDefault(ur => ur.RoleId == roleId);
+            if (userRole is not null)
+            {
+                UserRoles.Remove(userRole);
+            }
+        }
+
+        public Result CanLogin()
+        {
+            return Status switch
+            {
+                AccountStatus.Active => Result.Success(),
+                AccountStatus.PendingVerification => Result.Failure(Error.Forbidden("Auth.UnverifiedEmail", "Tài khoản chưa được xác thực. Vui lòng xác thực mã OTP gửi về email.")),
+                AccountStatus.Locked => Result.Failure(Error.Forbidden("Auth.AccountLocked", "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.")),
+                AccountStatus.Inactive => Result.Failure(Error.Forbidden("Auth.AccountInactive", "Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên.")),
+                
+                _=> Result.Failure(Error.Forbidden("Auth.InvalidStatus", "Trạng thái tài khoản không hợp lệ.")),
+            };
+        }
     }
 }

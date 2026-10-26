@@ -1,4 +1,4 @@
-﻿using GymX.Domain.Entities.Identity;
+using GymX.Domain.Entities.Identity;
 
 namespace GymX.Application.Common.Interfaces.Authencation
 {
@@ -6,6 +6,7 @@ namespace GymX.Application.Common.Interfaces.Authencation
     (
         string AccessToken,
         string RefreshToken,
+        Guid SessionId,
         int AccessTokenExpiresIn,
         DateTime AccessTokenExpiresAt,
         DateTime RefreshTokenExpiresAt

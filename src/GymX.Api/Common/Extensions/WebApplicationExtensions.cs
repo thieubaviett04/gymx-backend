@@ -1,5 +1,10 @@
+using System.Text;
 using GymX.Api.Common.Middleware;
 using GymX.Api.Hubs;
+using GymX.Domain.Constants;
+using GymX.Domain.Constants.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 
 namespace GymX.Api.Common.Extensions
@@ -25,15 +30,49 @@ namespace GymX.Api.Common.Extensions
             {
                 options.AddPolicy("DefaultCorsPolicy", policy =>
                 {
-                    // SignalR yêu cầu AllowCredentials() nên không dùng AllowAnyOrigin()
-                    policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
+                    policy.WithOrigins("http://localhost:3000", "http://localhost:5113", "https://localhost:3000")
                            .AllowAnyMethod()
                            .AllowAnyHeader()
                            .AllowCredentials();
                 });
             });
 
-            // Đăng ký SignalR
+            var jwtSecretKey = configuration["Jwt:SecretKey"] 
+                ?? throw new InvalidOperationException("Jwt:SecretKey chưa được cấu hình.");
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.RequireHttpsMetadata = false;
+                options.SaveToken = true;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey)),
+                    ValidateIssuer = true,
+                    ValidIssuer = configuration["Jwt:Issuer"],
+                    ValidateAudience = true,
+                    ValidAudience = configuration["Jwt:Audience"],
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero,
+                    RoleClaimType = System.Security.Claims.ClaimTypes.Role,
+                    NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
+                };
+            });
+
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy(PolicyNames.RequireAdmin, policy => policy.RequireRole(RoleCode.Admin));
+                options.AddPolicy(PolicyNames.RequireStaff, policy => policy.RequireRole(RoleCode.Admin, RoleCode.Receptionist, RoleCode.Trainer));
+                options.AddPolicy(PolicyNames.RequireTrainer, policy => policy.RequireRole(RoleCode.Trainer));
+                options.AddPolicy(PolicyNames.RequireReceptionist, policy => policy.RequireRole(RoleCode.Receptionist));
+                options.AddPolicy(PolicyNames.RequireMember, policy => policy.RequireRole(RoleCode.Member));
+            });
+
             services.AddSignalR();
 
             services.AddSwaggerGen(c =>
@@ -52,7 +91,7 @@ namespace GymX.Api.Common.Extensions
                     Scheme = "Bearer",
                     BearerFormat = "JWT",
                     In = ParameterLocation.Header,
-                    Description = "Enter 'Bearer' [space] and then your valid token..."
+                    Description = "Nhập 'Bearer' [khoảng trắng] rồi dán token vào. Ví dụ: 'Bearer eyJhbGciOi...'"
                 });
 
                 c.AddSecurityRequirement(document =>
@@ -60,7 +99,6 @@ namespace GymX.Api.Common.Extensions
                     {
                         [new OpenApiSecuritySchemeReference("Bearer", document)] = []
                     });
-
             });
 
             return services;
@@ -71,22 +109,27 @@ namespace GymX.Api.Common.Extensions
             app.UseMiddleware<ExceptionHandlingMiddleware>();
             app.UseRequestLocalization();
 
-            if(app.Environment.IsDevelopment())
+            // CORS phải được đặt trước UseHttpsRedirection, UseRouting, và UseAuthentication
+            app.UseCors("DefaultCorsPolicy");
+
+            if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI(c =>
                 {
                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "GymX Management System API v1");
                     c.DisplayRequestDuration();
+                    c.DefaultModelsExpandDepth(-1);
                 });
             }
+            else
+            {
+                app.UseHttpsRedirection();
+            }
 
-            app.UseHttpsRedirection();
-            app.UseCors("DefaultCorsPolicy");
             app.UseAuthentication();
             app.UseAuthorization();
 
-            // Map SignalR Hub
             app.MapHub<PaymentHub>("/hubs/payment");
 
             return app;

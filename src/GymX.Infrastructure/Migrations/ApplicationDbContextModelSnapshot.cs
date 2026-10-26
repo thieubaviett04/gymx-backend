@@ -703,6 +703,9 @@ namespace GymX.Infrastructure.Migrations
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasMaxLength(255)

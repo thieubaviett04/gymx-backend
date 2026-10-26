@@ -1,4 +1,4 @@
-﻿
+
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -17,10 +17,13 @@ namespace GymX.Infrastructure.Services.Authentication
 
         public IJwtServiceResult GenerateTokens(User user, IList<string> roles)
         {
+            var sessionId = Guid.NewGuid();
+
             // Tao Claims cho JWT
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, sessionId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim("fullName", user.FullName),
             };
@@ -61,6 +64,7 @@ namespace GymX.Infrastructure.Services.Authentication
             (
                 AccessToken : accessToken,
                 RefreshToken : refreshToken,
+                SessionId: sessionId,
                 AccessTokenExpiresIn : _options.ExpiryMinutes * 60, // Convert minutes to seconds
                 AccessTokenExpiresAt : accessTokenExpiresAt,
                 RefreshTokenExpiresAt : refreshTokenExpiresAt
