@@ -112,6 +112,8 @@ namespace GymX.Api.Common.Extensions
             // CORS phải được đặt trước UseHttpsRedirection, UseRouting, và UseAuthentication
             app.UseCors("DefaultCorsPolicy");
 
+            app.UseStaticFiles();
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();

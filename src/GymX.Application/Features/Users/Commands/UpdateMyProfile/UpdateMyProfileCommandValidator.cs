@@ -45,8 +45,8 @@ public class UpdateMyProfileCommandValidator : AbstractValidator<UpdateMyProfile
         When(x => !string.IsNullOrWhiteSpace(x.NationalId), () =>
         {
             RuleFor(x => x.NationalId!)
-                .Matches(@"^[0-9]{9,12}$")
-                .WithMessage("Số CCCD/CMND phải gồm 9 đến 12 chữ số.");
+                .Matches(@"^(\d{9}|\d{12})$")
+                .WithMessage("Số CCCD/CMND phải là 9 số (CMND cũ) hoặc đúng 12 số (CCCD).");
         });
     }
 }

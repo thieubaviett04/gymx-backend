@@ -68,14 +68,13 @@ namespace GymX.Domain.Entities.Identity
             Address = address;
         }
 
-        public void UpdateProfileInfo(string fullName, string? phoneNumber, string? gender, DateOnly? dateOfBirth, string? address, string? avatarUrl)
+        public void UpdateProfileInfo(string fullName, string? phoneNumber, string? gender, DateOnly? dateOfBirth, string? address)
         {
             FullName = fullName;
             PhoneNumber = phoneNumber;
             Gender = gender;
             DateOfBirth = dateOfBirth;
             Address = address;
-            AvatarUrl = avatarUrl;
         }
 
         public void UpdateAvatar(string? avatarUrl)

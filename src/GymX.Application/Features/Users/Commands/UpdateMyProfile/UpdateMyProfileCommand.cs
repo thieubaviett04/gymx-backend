@@ -10,7 +10,6 @@ public record UpdateMyProfileCommand(
     string? Gender,
     DateOnly? DateOfBirth,
     string? Address,
-    string? AvatarUrl,
     string? EmergencyContactName = null,
     string? EmergencyContactPhone = null,
     string? HealthNote = null,

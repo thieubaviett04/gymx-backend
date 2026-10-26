@@ -1,5 +1,6 @@
 using GymX.Application.Features.Users.Commands.ChangePassword;
 using GymX.Application.Features.Users.Commands.UpdateMyProfile;
+using GymX.Application.Features.Users.Commands.UploadAvatar;
 using GymX.Application.Features.Users.Queries.GetMyProfile;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -51,6 +52,35 @@ namespace GymX.Api.Controllers.UsersController
                 "Auth.Unauthorized" => Unauthorized(new { error = result.Error }),
                 "User.NotFound" => NotFound(new { error = result.Error }),
                 "User.PhoneExists" => Conflict(new { error = result.Error }),
+                _ => BadRequest(new { error = result.Error })
+            };
+        }
+
+        /// <summary>
+        /// Tải lên và cập nhật ảnh đại diện mới cho người dùng hiện tại
+        /// </summary>
+        [HttpPut("me/avatar")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadAvatar(IFormFile file, CancellationToken cancellationToken)
+        {
+            if (file is null || file.Length == 0)
+            {
+                return BadRequest(new { error = new { code = "Avatar.Empty", description = "Vui lòng chọn file ảnh để tải lên." } });
+            }
+
+            await using var stream = file.OpenReadStream();
+            var command = new UploadAvatarCommand(stream, file.FileName, file.ContentType, file.Length);
+            var result = await sender.Send(command, cancellationToken);
+
+            if (result.IsSuccess)
+            {
+                return Ok(new { success = true, data = new { avatarUrl = result.Value }, message = "Cập nhật ảnh đại diện thành công." });
+            }
+
+            return result.Error.Code switch
+            {
+                "Auth.Unauthorized" => Unauthorized(new { error = result.Error }),
+                "User.NotFound" => NotFound(new { error = result.Error }),
                 _ => BadRequest(new { error = result.Error })
             };
         }

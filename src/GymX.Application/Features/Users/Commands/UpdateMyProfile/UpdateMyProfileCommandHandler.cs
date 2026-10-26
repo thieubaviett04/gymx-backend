@@ -43,8 +43,7 @@ public class UpdateMyProfileCommandHandler(
             request.PhoneNumber?.Trim(),
             request.Gender?.ToUpperInvariant(),
             request.DateOfBirth,
-            request.Address?.Trim(),
-            request.AvatarUrl?.Trim()
+            request.Address?.Trim()
         );
         userRepository.Update(user);
 
@@ -70,40 +69,8 @@ public class UpdateMyProfileCommandHandler(
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var roles = await userRepository.GetUserRolesAsync(user.Id, cancellationToken);
+        var updatedProfile = await userRepository.GetFullProfileAsync(user.Id, cancellationToken);
 
-        var dto = new UserProfileDto
-        {
-            Id = user.Id,
-            Email = user.Email,
-            FullName = user.FullName,
-            PhoneNumber = user.PhoneNumber,
-            Gender = user.Gender,
-            DateOfBirth = user.DateOfBirth,
-            Address = user.Address,
-            AvatarUrl = user.AvatarUrl,
-            Status = user.Status,
-            EmailVerifiedAt = user.EmailVerifiedAt,
-            Roles = roles,
-            MemberInfo = member is null ? null : new MemberProfileDto
-            {
-                MemberCode = member.MemberCode,
-                JoinDate = member.JoinDate,
-                EmergencyContactName = member.EmergencyContactName,
-                EmergencyContactPhone = member.EmergencyContactPhone,
-                HealthNote = member.HealthNote,
-                MemberStatus = member.MemberStatus
-            },
-            EmployeeInfo = employee is null ? null : new EmployeeProfileDto
-            {
-                EmployeeCode = employee.EmployeeCode,
-                Position = employee.Position,
-                HiredAt = employee.HiredAt,
-                NationalId = employee.NationalId,
-                EmploymentStatus = employee.EmploymentStatus
-            }
-        };
-
-        return Result.Success(dto);
+        return Result.Success(updatedProfile!);
     }
 }
