@@ -30,7 +30,7 @@ namespace GymX.Api.Common.Extensions
             {
                 options.AddPolicy("DefaultCorsPolicy", policy =>
                 {
-                    policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
+                    policy.WithOrigins("http://localhost:3000", "http://localhost:5113", "https://localhost:3000")
                            .AllowAnyMethod()
                            .AllowAnyHeader()
                            .AllowCredentials();
@@ -109,6 +109,9 @@ namespace GymX.Api.Common.Extensions
             app.UseMiddleware<ExceptionHandlingMiddleware>();
             app.UseRequestLocalization();
 
+            // CORS phải được đặt trước UseHttpsRedirection, UseRouting, và UseAuthentication
+            app.UseCors("DefaultCorsPolicy");
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -119,9 +122,11 @@ namespace GymX.Api.Common.Extensions
                     c.DefaultModelsExpandDepth(-1);
                 });
             }
+            else
+            {
+                app.UseHttpsRedirection();
+            }
 
-            app.UseHttpsRedirection();
-            app.UseCors("DefaultCorsPolicy");
             app.UseAuthentication();
             app.UseAuthorization();
 
