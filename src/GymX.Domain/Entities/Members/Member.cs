@@ -33,6 +33,13 @@ public class Member : EntityAuditBase, ISoftDelete
         };
     }
 
+    public void UpdateProfile(string? emergencyContactName, string? emergencyContactPhone, string? healthNote)
+    {
+        EmergencyContactName = emergencyContactName;
+        EmergencyContactPhone = emergencyContactPhone;
+        HealthNote = healthNote;
+    }
+
     public void Suspend()
     {
         MemberStatus = Constants.MemberStatus.Suspended;

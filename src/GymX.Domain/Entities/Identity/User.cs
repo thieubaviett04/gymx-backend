@@ -68,6 +68,21 @@ namespace GymX.Domain.Entities.Identity
             Address = address;
         }
 
+        public void UpdateProfileInfo(string fullName, string? phoneNumber, string? gender, DateOnly? dateOfBirth, string? address, string? avatarUrl)
+        {
+            FullName = fullName;
+            PhoneNumber = phoneNumber;
+            Gender = gender;
+            DateOfBirth = dateOfBirth;
+            Address = address;
+            AvatarUrl = avatarUrl;
+        }
+
+        public void UpdateAvatar(string? avatarUrl)
+        {
+            AvatarUrl = avatarUrl;
+        }
+
         public void AssignRole(Guid roleId)
         {
             if (UserRoles.Any(ur => ur.RoleId == roleId)) return;

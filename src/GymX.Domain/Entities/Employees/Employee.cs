@@ -33,6 +33,11 @@ public class Employee : EntityAuditBase, ISoftDelete
         };
     }
 
+    public void UpdateNationalId(string? nationalId)
+    {
+        NationalId = nationalId;
+    }
+
     public void Terminate()
     {
         EmploymentStatus = EmployeeStatus.Inactive;
