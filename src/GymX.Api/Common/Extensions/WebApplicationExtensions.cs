@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using GymX.Api.Common.Middleware;
 using GymX.Api.Hubs;
 using GymX.Domain.Constants;
@@ -14,7 +15,11 @@ namespace GymX.Api.Common.Extensions
         public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddEndpointsApiExplorer();
-            services.AddControllers();
+            services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+                });
 
             services.AddLocalization();
 
@@ -109,8 +114,9 @@ namespace GymX.Api.Common.Extensions
             app.UseMiddleware<ExceptionHandlingMiddleware>();
             app.UseRequestLocalization();
 
-            // CORS phải được đặt trước UseHttpsRedirection, UseRouting, và UseAuthentication
             app.UseCors("DefaultCorsPolicy");
+
+            app.UseStaticFiles();
 
             if (app.Environment.IsDevelopment())
             {
