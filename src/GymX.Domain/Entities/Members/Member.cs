@@ -40,6 +40,24 @@ public class Member : EntityAuditBase, ISoftDelete
         HealthNote = healthNote;
     }
 
+    public void UpdatePartialProfile(string? emergencyContactName, string? emergencyContactPhone, string? healthNote)
+    {
+        if (emergencyContactName is not null)
+        {
+            EmergencyContactName = emergencyContactName.Trim();
+        }
+
+        if (emergencyContactPhone is not null)
+        {
+            EmergencyContactPhone = emergencyContactPhone.Trim();
+        }
+
+        if (healthNote is not null)
+        {
+            HealthNote = healthNote.Trim();
+        }
+    }
+
     public void Suspend()
     {
         MemberStatus = Constants.MemberStatus.Suspended;

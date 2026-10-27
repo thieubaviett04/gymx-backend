@@ -45,7 +45,6 @@ public class LocalFileStorageService : IFileStorageService
             }
             catch
             {
-                // Bỏ qua lỗi xóa file cũ nếu file đang bị lock hoặc không tồn tại
             }
         }
 

@@ -1,5 +1,4 @@
 using GymX.Domain.Common.Models;
-using GymX.Domain.Constants;
 
 namespace GymX.Domain.Entities.Employees;
 
@@ -29,9 +28,13 @@ public class Trainer : EntityAuditBase
         };
     }
 
+    public void UpdateDescription(string? description)
+    {
+        Description = description;
+    }
+
     public void UpdateRating(decimal newRating)
     {
-        // Simple moving average update
         decimal totalRating = (RatingAvg * RatingCount) + newRating;
         RatingCount++;
         RatingAvg = totalRating / RatingCount;

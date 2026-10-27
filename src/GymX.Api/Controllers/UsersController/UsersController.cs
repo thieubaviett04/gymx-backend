@@ -1,7 +1,7 @@
-using GymX.Application.Features.Users.Commands.ChangePassword;
-using GymX.Application.Features.Users.Commands.UpdateMyProfile;
-using GymX.Application.Features.Users.Commands.UploadAvatar;
-using GymX.Application.Features.Users.Queries.GetMyProfile;
+using GymX.Application.Modules.Users.Commands.ChangePassword;
+using GymX.Application.Modules.Users.Commands.UpdateMyProfile;
+using GymX.Application.Modules.Users.Commands.UploadAvatar;
+using GymX.Application.Modules.Users.Queries.GetMyProfile;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -31,7 +31,7 @@ namespace GymX.Api.Controllers.UsersController
             };
         }
 
-        [HttpPut("me")]
+        [HttpPatch("me")]
         public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateMyProfileCommand command, CancellationToken cancellationToken)
         {
             var result = await sender.Send(command, cancellationToken);

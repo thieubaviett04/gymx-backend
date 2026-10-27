@@ -77,6 +77,34 @@ namespace GymX.Domain.Entities.Identity
             Address = address;
         }
 
+        public void UpdatePartialProfileInfo(string? fullName, string? phoneNumber, string? gender, DateOnly? dateOfBirth, string? address)
+        {
+            if (!string.IsNullOrWhiteSpace(fullName))
+            {
+                FullName = fullName.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(phoneNumber))
+            {
+                PhoneNumber = phoneNumber.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(gender))
+            {
+                Gender = gender.ToUpperInvariant();
+            }
+
+            if (dateOfBirth.HasValue)
+            {
+                DateOfBirth = dateOfBirth.Value;
+            }
+
+            if (address is not null)
+            {
+                Address = address.Trim();
+            }
+        }
+
         public void UpdateAvatar(string? avatarUrl)
         {
             AvatarUrl = avatarUrl;

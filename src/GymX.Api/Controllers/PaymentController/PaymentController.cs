@@ -1,6 +1,6 @@
 using GymX.Api.Common.Controllers;
-using GymX.Application.Features.Payments.Commands.CreateInvoice;
-using GymX.Application.Features.Payments.Commands.HandleWebhook;
+using GymX.Application.Modules.Payments.Commands.CreateInvoice;
+using GymX.Application.Modules.Payments.Commands.HandleWebhook;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using PayOS;

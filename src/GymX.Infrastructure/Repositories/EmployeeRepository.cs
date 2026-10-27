@@ -9,4 +9,7 @@ public class EmployeeRepository(ApplicationDbContext context) : GenericRepositor
 {
     public Task<Employee?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
         => DbSet.FirstOrDefaultAsync(e => e.UserId == userId, cancellationToken);
+
+    public Task<Employee?> GetByNationalIdAsync(string nationalId, CancellationToken cancellationToken = default)
+        => DbSet.FirstOrDefaultAsync(e => e.NationalId == nationalId, cancellationToken);
 }
