@@ -1,17 +1,22 @@
-
+using GymX.Application.Modules.Auth.DTOs;
 using GymX.Domain.Common.Models;
 using MediatR;
 
 namespace GymX.Application.Modules.Auth.Commands.Register;
 
-// Request DTO (Command)
 public record RegisterCommand(
     string FullName,
     string Email,
     string PhoneNumber,
-    string Password) : IRequest<Result<RegisterResponse>>;
+    string Password) : IRequest<Result<RegisterResponse>>
+{
+    public static RegisterCommand FromRequest(RegisterRequest req) => new(
+        req.FullName.Trim(),
+        req.Email.Trim().ToLowerInvariant(),
+        req.PhoneNumber.Trim(),
+        req.Password);
+}
 
-// Response DTO
 public record RegisterResponse
 {
     public string Email { get; init; } = string.Empty;
@@ -19,12 +24,9 @@ public record RegisterResponse
     public string Message { get; init; } = string.Empty;
 }
 
-// Cấu trúc dùng để đóng gói và ném vào Cache (Limbo State)
 public record PendingRegistrationCacheItem(
     string FullName,
     string Email,
     string PhoneNumber,
     string PasswordHash,
     string OtpCode);
-
-

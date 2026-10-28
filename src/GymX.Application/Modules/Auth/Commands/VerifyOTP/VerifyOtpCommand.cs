@@ -1,14 +1,17 @@
-﻿using GymX.Domain.Common.Models;
+using GymX.Application.Modules.Auth.DTOs;
+using GymX.Domain.Common.Models;
 using MediatR;
-using System;
 
-namespace GymX.Application.Modules.Auth.Commands.VerifyOTP
+namespace GymX.Application.Modules.Auth.Commands.VerifyOTP;
+
+public record VerifyOtpCommand(string Email, string OtpCode) : IRequest<Result<VerifyOtpResponse>>
 {
-    public record VerifyOtpCommand(string Email, string OtpCode) : IRequest<Result<VerifyOtpResponse>>;
+    public static VerifyOtpCommand FromRequest(VerifyOtpRequest req) => new(
+        req.Email.Trim().ToLowerInvariant(),
+        req.OtpCode.Trim());
+}
 
-    public record VerifyOtpResponse
-    {
-        public string Token { get; init; } = string.Empty;
-    }
-
+public record VerifyOtpResponse
+{
+    public string Token { get; init; } = string.Empty;
 }
