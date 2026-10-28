@@ -1,21 +1,13 @@
-﻿using GymX.Domain.Common.Models;
+using GymX.Application.Modules.Auth.DTOs.Request;
+using GymX.Application.Modules.Auth.DTOs.Response;
+using GymX.Domain.Common.Models;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace GymX.Application.Modules.Auth.Commands.ResetPassword
+namespace GymX.Application.Modules.Auth.Commands.ResetPassword;
+
+public record ResetPasswordCommand(string Token, string NewPassword) : IRequest<Result<ResetPasswordResponse>>
 {
-    public record ResetPasswordCommand(
-        string Token,
-        string NewPassword) : IRequest<Result<ResetPasswordResponse>>;
-
-    public record ResetPasswordResponse
-    {
-        public string Email { get; init; } = string.Empty;
-        public string Message { get; init; } = string.Empty;
-    }
-
+    public static ResetPasswordCommand FromRequest(ResetPasswordRequest req) => new(
+        req.Token.Trim(),
+        req.NewPassword);
 }

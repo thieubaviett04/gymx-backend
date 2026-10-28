@@ -1,4 +1,4 @@
-﻿namespace GymX.Application.Modules.Members.DTOs;
+namespace GymX.Application.Modules.Members.DTOs.Response;
 
 public class MemberProfileDto
 {
