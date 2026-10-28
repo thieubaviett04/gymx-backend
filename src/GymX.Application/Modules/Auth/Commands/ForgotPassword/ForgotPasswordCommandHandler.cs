@@ -1,5 +1,6 @@
 using GymX.Application.Common.Interfaces;
 using GymX.Application.Common.Interfaces.Repositories;
+using GymX.Application.Common.Templates;
 using GymX.Application.Modules.Auth.DTOs.Response;
 using GymX.Domain.Common.Models;
 using MediatR;
@@ -30,10 +31,17 @@ public class ForgotPasswordCommandHandler(
         var cacheKey = $"OTP_ResetPassword_{request.Email}";
         memoryCache.Set(cacheKey, otpCode, TimeSpan.FromMinutes(5));
 
+        var recipientName = string.IsNullOrWhiteSpace(user.FullName) ? "Hội viên" : user.FullName;
+        var emailContent = EmailTemplates.BuildOtpEmail(
+            recipientName: recipientName,
+            otpCode: otpCode,
+            purposeTitle: "Yêu cầu đặt lại mật khẩu GymX",
+            purposeDescription: "Hệ thống đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Vui lòng sử dụng mã OTP dưới đây để tiến hành thiết lập mật khẩu mới:");
+
         await emailService.SendEmailAsync(
             request.Email,
-            "GymX - Đặt lại mật khẩu",
-            $"Mã OTP đặt lại mật khẩu của bạn là: <b>{otpCode}</b>. Mã có hiệu lực trong vòng 5 phút.",
+            "GymX - Mã OTP Đặt lại mật khẩu",
+            emailContent,
             cancellationToken);
 
         return Result<ForgotPasswordResponse>.Success(new ForgotPasswordResponse

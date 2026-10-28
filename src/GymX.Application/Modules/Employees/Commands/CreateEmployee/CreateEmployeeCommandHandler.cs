@@ -1,6 +1,7 @@
 using GymX.Application.Common.Interfaces;
 using GymX.Application.Common.Interfaces.Authencation;
 using GymX.Application.Common.Interfaces.Repositories;
+using GymX.Application.Common.Templates;
 using GymX.Application.Common.Utilities;
 using GymX.Application.Modules.Employees.DTOs.Response;
 using GymX.Domain.Common.Models;
@@ -81,20 +82,12 @@ public class CreateEmployeeCommandHandler(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         var emailSubject = "Chào mừng bạn đến với GymX - Thông tin tài khoản nhân viên";
-        var emailBody = $@"
-            <div style=""font-family: Arial, sans-serif; line-height: 1.6; color: #333;"">
-                <h2 style=""color: #0284c7;"">GymX Management System</h2>
-                <p>Xin chào <b>{command.FullName}</b>,</p>
-                <p>Tài khoản nhân viên của bạn tại hệ thống phòng tập GymX đã được tạo thành công:</p>
-                <table style=""border-collapse: collapse; width: 100%; max-width: 500px;"">
-                    <tr><td style=""padding: 8px; border: 1px solid #ddd;""><b>Mã nhân viên:</b></td><td style=""padding: 8px; border: 1px solid #ddd;"">{employeeCode}</td></tr>
-                    <tr><td style=""padding: 8px; border: 1px solid #ddd;""><b>Chức vụ:</b></td><td style=""padding: 8px; border: 1px solid #ddd;"">{command.Position}</td></tr>
-                    <tr><td style=""padding: 8px; border: 1px solid #ddd;""><b>Email đăng nhập:</b></td><td style=""padding: 8px; border: 1px solid #ddd;"">{command.Email}</td></tr>
-                    <tr><td style=""padding: 8px; border: 1px solid #ddd;""><b>Mật khẩu tạm thời:</b></td><td style=""padding: 8px; border: 1px solid #ddd; color: #e11d48; font-weight: bold;"">{rawPassword}</td></tr>
-                </table>
-                <p style=""margin-top: 16px;"">Vui lòng đăng nhập và đổi lại mật khẩu cá nhân ngay trong lần đầu sử dụng hệ thống.</p>
-                <p>Trân trọng,<br/><b>Ban Quản Trị GymX</b></p>
-            </div>";
+        var emailBody = EmailTemplates.BuildEmployeeWelcomeEmail(
+            fullName: command.FullName,
+            employeeCode: employeeCode,
+            position: command.Position,
+            email: command.Email,
+            temporaryPassword: rawPassword);
 
         await emailService.SendEmailAsync(command.Email, emailSubject, emailBody, cancellationToken);
 
