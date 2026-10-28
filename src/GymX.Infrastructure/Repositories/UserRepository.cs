@@ -1,7 +1,7 @@
 using GymX.Application.Common.Interfaces.Repositories;
-using GymX.Application.Modules.Employees.DTOs;
-using GymX.Application.Modules.Members.DTOs;
-using GymX.Application.Modules.Trainers.DTOs;
+using GymX.Application.Modules.Employees.DTOs.Response;
+using GymX.Application.Modules.Members.DTOs.Response;
+using GymX.Application.Modules.Trainers.DTOs.Response;
 using GymX.Application.Modules.Users.DTOs.Response;
 using GymX.Domain.Entities.Identity;
 using GymX.Infrastructure.Persistence;

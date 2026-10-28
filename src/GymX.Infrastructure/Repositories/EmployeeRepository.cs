@@ -1,5 +1,5 @@
 using GymX.Application.Common.Interfaces.Repositories;
-using GymX.Application.Modules.Employees.DTOs;
+using GymX.Application.Modules.Employees.DTOs.Response;
 using GymX.Domain.Common.Models;
 using GymX.Domain.Entities.Employees;
 using GymX.Infrastructure.Persistence;

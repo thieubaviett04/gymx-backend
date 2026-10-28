@@ -1,4 +1,5 @@
-using GymX.Application.Modules.Employees.DTOs;
+using GymX.Application.Modules.Employees.DTOs.Request;
+using GymX.Application.Modules.Employees.DTOs.Response;
 using GymX.Domain.Common.Models;
 using MediatR;
 

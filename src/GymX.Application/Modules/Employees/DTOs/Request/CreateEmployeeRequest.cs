@@ -1,16 +1,17 @@
-namespace GymX.Application.Modules.Employees.DTOs;
+namespace GymX.Application.Modules.Employees.DTOs.Request;
 
-public class UpdateEmployeeRequest
+public class CreateEmployeeRequest
 {
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string NationalId { get; set; } = string.Empty;
+    public string Position { get; set; } = string.Empty;
+    public decimal BaseSalaryRate { get; set; }
     public string? PhoneNumber { get; set; }
     public string? Gender { get; set; }
     public DateOnly? DateOfBirth { get; set; }
     public string? Address { get; set; }
-    public string Position { get; set; } = string.Empty;
-    public decimal BaseSalaryRate { get; set; }
-    public string EmploymentStatus { get; set; } = string.Empty;
+    public DateOnly? HiredAt { get; set; }
 
     public Guid? SpecializationId { get; set; }
     public short? ExperienceYears { get; set; }

@@ -2,7 +2,8 @@ using GymX.Application.Modules.Employees.Commands.CreateEmployee;
 using GymX.Application.Modules.Employees.Commands.DeleteEmployee;
 using GymX.Application.Modules.Employees.Commands.UpdateEmployee;
 using GymX.Application.Modules.Employees.Commands.UpdateMyEmployeeProfile;
-using GymX.Application.Modules.Employees.DTOs;
+using GymX.Application.Modules.Employees.DTOs.Request;
+using GymX.Application.Modules.Employees.DTOs.Response;
 using GymX.Application.Modules.Employees.Queries.GetEmployeeById;
 using GymX.Application.Modules.Employees.Queries.GetEmployees;
 using GymX.Application.Modules.Employees.Queries.GetMyEmployeeProfile;
@@ -38,9 +39,9 @@ public class EmployeesController(ISender sender) : ControllerBase
     }
 
     [HttpPatch("me")]
-    public async Task<IActionResult> UpdateMyEmployeeProfile([FromBody] UpdateMyEmployeeProfileCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateMyEmployeeProfile([FromBody] UpdateMyEmployeeProfileRequest request, CancellationToken cancellationToken)
     {
-        var result = await sender.Send(command, cancellationToken);
+        var result = await sender.Send(UpdateMyEmployeeProfileCommand.FromRequest(request), cancellationToken);
 
         if (result.IsSuccess)
         {
