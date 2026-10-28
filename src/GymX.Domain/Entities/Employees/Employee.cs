@@ -38,6 +38,30 @@ public class Employee : EntityAuditBase, ISoftDelete
         NationalId = nationalId;
     }
 
+    public void UpdateInfo(string position, decimal baseSalaryRate, string employmentStatus)
+    {
+        Position = position;
+        BaseSalaryRate = baseSalaryRate;
+        EmploymentStatus = employmentStatus;
+    }
+
+    public void Restore(string position, decimal baseSalaryRate, DateOnly hiredAt)
+    {
+        IsDeleted = false;
+        DeletedDate = null;
+        Position = position;
+        BaseSalaryRate = baseSalaryRate;
+        HiredAt = hiredAt;
+        EmploymentStatus = EmployeeStatus.Active;
+    }
+
+    public void SoftDelete()
+    {
+        IsDeleted = true;
+        DeletedDate = DateTime.UtcNow;
+        EmploymentStatus = EmployeeStatus.Inactive;
+    }
+
     public void Terminate()
     {
         EmploymentStatus = EmployeeStatus.Inactive;

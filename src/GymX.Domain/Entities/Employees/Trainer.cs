@@ -33,6 +33,14 @@ public class Trainer : EntityAuditBase
         Description = description;
     }
 
+    public void UpdateTrainerInfo(Guid specializationId, short experienceYears, decimal? salaryCoefficient, string? description)
+    {
+        SpecializationId = specializationId;
+        ExperienceYears = experienceYears;
+        SalaryCoefficient = salaryCoefficient;
+        Description = description;
+    }
+
     public void UpdateRating(decimal newRating)
     {
         decimal totalRating = (RatingAvg * RatingCount) + newRating;
