@@ -110,6 +110,25 @@ namespace GymX.Domain.Entities.Identity
             AvatarUrl = avatarUrl;
         }
 
+        public void UpdateEmail(string email)
+        {
+            Email = email;
+        }
+
+        public void Deactivate()
+        {
+            Status = AccountStatus.Inactive;
+            IsDeleted = true;
+            DeletedDate = DateTime.UtcNow;
+        }
+
+        public void Activate()
+        {
+            Status = AccountStatus.Active;
+            IsDeleted = false;
+            DeletedDate = null;
+        }
+
         public void AssignRole(Guid roleId)
         {
             if (UserRoles.Any(ur => ur.RoleId == roleId)) return;

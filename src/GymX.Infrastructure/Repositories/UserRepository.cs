@@ -1,4 +1,4 @@
-﻿using GymX.Application.Common.Interfaces.Repositories;
+using GymX.Application.Common.Interfaces.Repositories;
 using GymX.Application.Modules.Employees.DTOs;
 using GymX.Application.Modules.Members.DTOs;
 using GymX.Application.Modules.Trainers.DTOs;
@@ -13,11 +13,20 @@ public class UserRepository(ApplicationDbContext context) : GenericRepository<Us
 {
     public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         => Context.Users
+        .IgnoreQueryFilters()
         .Include(u => u.RefreshTokens)
         .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
 
     public Task<User?> GetByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default)
-        => Context.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber, cancellationToken);
+        => Context.Users
+        .IgnoreQueryFilters()
+        .FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber, cancellationToken);
+
+    public Task<User?> GetUserWithRolesByIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        => Context.Users
+        .IgnoreQueryFilters()
+        .Include(u => u.UserRoles)
+        .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
     public Task<User?> GetByGoogleIdAsync(string googleId, CancellationToken cancellationToken = default)
         => Context.Users
