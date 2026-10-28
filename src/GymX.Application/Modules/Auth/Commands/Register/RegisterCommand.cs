@@ -16,17 +16,3 @@ public record RegisterCommand(
         req.PhoneNumber.Trim(),
         req.Password);
 }
-
-public record RegisterResponse
-{
-    public string Email { get; init; } = string.Empty;
-    public string FullName { get; init; } = string.Empty;
-    public string Message { get; init; } = string.Empty;
-}
-
-public record PendingRegistrationCacheItem(
-    string FullName,
-    string Email,
-    string PhoneNumber,
-    string PasswordHash,
-    string OtpCode);

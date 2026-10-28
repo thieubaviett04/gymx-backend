@@ -10,8 +10,3 @@ public record VerifyOtpCommand(string Email, string OtpCode) : IRequest<Result<V
         req.Email.Trim().ToLowerInvariant(),
         req.OtpCode.Trim());
 }
-
-public record VerifyOtpResponse
-{
-    public string Token { get; init; } = string.Empty;
-}
