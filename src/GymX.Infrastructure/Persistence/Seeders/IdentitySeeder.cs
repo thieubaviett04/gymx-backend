@@ -1,6 +1,7 @@
 using GymX.Domain.Constants;
 using GymX.Domain.Entities.Employees;
 using GymX.Domain.Entities.Identity;
+using GymX.Domain.Entities.Members;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymX.Infrastructure.Persistence.Seeders;
@@ -9,7 +10,6 @@ public static class IdentitySeeder
 {
     public static async Task SeedAsync(ApplicationDbContext context)
     {
-        // 1. Seed Roles
         if (!await context.Roles.AnyAsync())
         {
             await context.Roles.AddRangeAsync(
@@ -25,7 +25,6 @@ public static class IdentitySeeder
         if (adminUser is null)
         {
             adminUser = User.CreateWithPassword("admin@gymx.vn", "Admin GymX", BCrypt.Net.BCrypt.HashPassword("Admin@123", 11));
-            
             adminUser.UpdateProfile("0987654321", "MALE", new DateOnly(1990, 1, 1), "Hà Nội, Việt Nam");
             adminUser.VerifyEmail();
             
@@ -46,7 +45,6 @@ public static class IdentitySeeder
             await context.SaveChangesAsync();
         }
 
-        // 2. Seed Receptionist
         var recUser = await context.Users.FirstOrDefaultAsync(u => u.Email == "receptionist@gymx.vn");
         if (recUser is null)
         {
@@ -69,7 +67,6 @@ public static class IdentitySeeder
             await context.SaveChangesAsync();
         }
 
-        // 3. Seed Trainer
         var trainerUser = await context.Users.FirstOrDefaultAsync(u => u.Email == "trainer@gymx.vn");
         if (trainerUser is null)
         {
@@ -92,7 +89,25 @@ public static class IdentitySeeder
             await context.SaveChangesAsync();
         }
 
-        // 4. Seed Member
+        if (!await context.Specializations.AnyAsync())
+        {
+            var defaultSpec = Specialization.Create("Fitness & Bodybuilding", "Thể hình & Giảm mỡ chuyên sâu");
+            await context.Specializations.AddAsync(defaultSpec);
+            await context.SaveChangesAsync();
+        }
+
+        if (trainerUser is not null)
+        {
+            var trainerEmp = await context.Employees.FirstOrDefaultAsync(e => e.UserId == trainerUser.Id);
+            if (trainerEmp is not null && !await context.Trainers.AnyAsync(t => t.EmployeeId == trainerEmp.Id))
+            {
+                var spec = await context.Specializations.FirstAsync();
+                var trainer = Trainer.Create(trainerEmp.Id, spec.Id, 5, 1.5m, "Huấn luyện viên chuyên nghiệp chứng chỉ quốc tế NASM, 5 năm kinh nghiệm.");
+                await context.Trainers.AddAsync(trainer);
+                await context.SaveChangesAsync();
+            }
+        }
+
         var memberUser = await context.Users.FirstOrDefaultAsync(u => u.Email == "member@gymx.vn");
         if (memberUser is null)
         {
@@ -109,6 +124,13 @@ public static class IdentitySeeder
         else
         {
             memberUser.UpdatePassword(BCrypt.Net.BCrypt.HashPassword("Member@123", 11));
+            await context.SaveChangesAsync();
+        }
+
+        if (memberUser is not null && !await context.Members.AnyAsync(m => m.UserId == memberUser.Id))
+        {
+            var member = Member.Create(memberUser.Id, "MEM0001", DateOnly.FromDateTime(DateTime.UtcNow), "Nguyễn Thị Thân", "0912345678", "Sức khỏe tốt, không có tiền sử bệnh lý nền.");
+            await context.Members.AddAsync(member);
             await context.SaveChangesAsync();
         }
     }
