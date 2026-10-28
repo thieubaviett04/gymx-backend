@@ -35,12 +35,12 @@ public class ForgotPasswordCommandHandler(
         var emailContent = EmailTemplates.BuildOtpEmail(
             recipientName: recipientName,
             otpCode: otpCode,
-            purposeTitle: "Yêu cầu đặt lại mật khẩu GymX",
+            purposeTitle: "Yêu cầu đặt lại mật khẩu",
             purposeDescription: "Hệ thống đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Vui lòng sử dụng mã OTP dưới đây để tiến hành thiết lập mật khẩu mới:");
 
         await emailService.SendEmailAsync(
             request.Email,
-            "GymX - Mã OTP Đặt lại mật khẩu",
+            "GymFitness - Mã OTP Đặt lại mật khẩu",
             emailContent,
             cancellationToken);
 

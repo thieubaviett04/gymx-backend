@@ -81,7 +81,7 @@ public class CreateEmployeeCommandHandler(
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var emailSubject = "Chào mừng bạn đến với GymX - Thông tin tài khoản nhân viên";
+        var emailSubject = "Chào mừng bạn đến với GymFitness - Thông tin tài khoản nhân viên";
         var emailBody = EmailTemplates.BuildEmployeeWelcomeEmail(
             fullName: command.FullName,
             employeeCode: employeeCode,

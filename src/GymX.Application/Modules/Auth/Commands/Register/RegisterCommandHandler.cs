@@ -50,12 +50,12 @@ public class RegisterCommandHandler(
         var emailContent = EmailTemplates.BuildOtpEmail(
             recipientName: request.FullName,
             otpCode: otpCode,
-            purposeTitle: "Xác thực đăng ký tài khoản GymX",
-            purposeDescription: "Cảm ơn bạn đã lựa chọn đồng hành cùng GymX! Để hoàn tất quá trình đăng ký tài khoản, vui lòng nhập mã OTP xác thực dưới đây vào ứng dụng:");
+            purposeTitle: "Xác thực đăng ký tài khoản",
+            purposeDescription: "Cảm ơn bạn đã lựa chọn đồng hành cùng GymFitness! Để hoàn tất quá trình đăng ký tài khoản, vui lòng nhập mã OTP xác thực dưới đây vào ứng dụng:");
 
         var emailSent = await emailService.SendEmailAsync(
             request.Email,
-            "GymX - Mã OTP Xác thực đăng ký tài khoản",
+            "GymFitness - Mã OTP Xác thực đăng ký tài khoản",
             emailContent,
             cancellationToken);
 
