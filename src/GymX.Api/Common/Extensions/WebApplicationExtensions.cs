@@ -67,6 +67,19 @@ namespace GymX.Api.Common.Extensions
                     RoleClaimType = System.Security.Claims.ClaimTypes.Role,
                     NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
                 };
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
             services.AddAuthorization(options =>
@@ -79,6 +92,7 @@ namespace GymX.Api.Common.Extensions
             });
 
             services.AddSignalR();
+            services.AddSingleton<Microsoft.AspNetCore.SignalR.IUserIdProvider, GymX.Infrastructure.Hubs.CustomUserIdProvider>();
 
             services.AddSwaggerGen(c =>
             {
@@ -137,6 +151,7 @@ namespace GymX.Api.Common.Extensions
             app.UseAuthorization();
 
             app.MapHub<PaymentHub>("/hubs/payment");
+            app.MapHub<GymX.Infrastructure.Hubs.NotificationHub>("/hubs/notifications");
 
             return app;
         }
