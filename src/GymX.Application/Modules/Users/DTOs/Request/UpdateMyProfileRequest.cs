@@ -1,4 +1,4 @@
-namespace GymX.Application.Modules.Users.DTOs;
+namespace GymX.Application.Modules.Users.DTOs.Request;
 
 public class UpdateMyProfileRequest
 {

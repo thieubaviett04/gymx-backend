@@ -1,4 +1,4 @@
-using GymX.Application.Modules.Users.DTOs;
+using GymX.Application.Modules.Users.DTOs.Response;
 using GymX.Domain.Entities.Identity;
 
 namespace GymX.Application.Common.Interfaces.Repositories;

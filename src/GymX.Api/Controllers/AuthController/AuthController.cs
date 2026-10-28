@@ -8,7 +8,7 @@ using GymX.Application.Modules.Auth.Commands.Register;
 using GymX.Application.Modules.Auth.Commands.ResetPassword;
 using GymX.Application.Modules.Auth.Commands.VerifyEmail;
 using GymX.Application.Modules.Auth.Commands.VerifyOTP;
-using GymX.Application.Modules.Auth.DTOs;
+using GymX.Application.Modules.Auth.DTOs.Request;
 using GymX.Domain.Constants;
 using GymX.Domain.Constants.Identity;
 using MediatR;

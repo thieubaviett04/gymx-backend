@@ -1,4 +1,4 @@
-namespace GymX.Application.Modules.Auth.DTOs;
+namespace GymX.Application.Modules.Auth.DTOs.Request;
 
 public class LoginRequest
 {

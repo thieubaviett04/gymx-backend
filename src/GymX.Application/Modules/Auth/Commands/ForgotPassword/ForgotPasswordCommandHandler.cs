@@ -1,6 +1,6 @@
 using GymX.Application.Common.Interfaces;
 using GymX.Application.Common.Interfaces.Repositories;
-using GymX.Application.Modules.Auth.DTOs;
+using GymX.Application.Modules.Auth.DTOs.Response;
 using GymX.Domain.Common.Models;
 using MediatR;
 using Microsoft.Extensions.Caching.Memory;

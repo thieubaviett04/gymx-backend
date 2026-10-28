@@ -3,7 +3,7 @@ using GymX.Application.Common.Interfaces.Authencation;
 using GymX.Application.Common.Interfaces.Repositories;
 using GymX.Application.Common.Models.Authentication;
 using GymX.Application.Modules.Auth.Commands.Register;
-using GymX.Application.Modules.Auth.DTOs;
+using GymX.Application.Modules.Auth.DTOs.Response;
 using GymX.Domain.Common.Models;
 using GymX.Domain.Constants;
 using GymX.Domain.Entities.Identity;

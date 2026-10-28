@@ -1,6 +1,6 @@
-namespace GymX.Application.Modules.Auth.DTOs;
+namespace GymX.Application.Modules.Auth.DTOs.Response;
 
-public class ResetPasswordResponse
+public class ForgotPasswordResponse
 {
     public string Email { get; init; } = string.Empty;
     public string Message { get; init; } = string.Empty;

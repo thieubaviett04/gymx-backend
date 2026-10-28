@@ -2,7 +2,7 @@ using GymX.Application.Modules.Employees.DTOs;
 using GymX.Application.Modules.Members.DTOs;
 using GymX.Application.Modules.Trainers.DTOs;
 
-namespace GymX.Application.Modules.Users.DTOs;
+namespace GymX.Application.Modules.Users.DTOs.Response;
 
 public class UserProfileDto
 {

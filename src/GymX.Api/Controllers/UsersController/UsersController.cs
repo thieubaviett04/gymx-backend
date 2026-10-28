@@ -1,7 +1,7 @@
 using GymX.Application.Modules.Users.Commands.ChangePassword;
 using GymX.Application.Modules.Users.Commands.UpdateMyProfile;
 using GymX.Application.Modules.Users.Commands.UploadAvatar;
-using GymX.Application.Modules.Users.DTOs;
+using GymX.Application.Modules.Users.DTOs.Request;
 using GymX.Application.Modules.Users.Queries.GetMyProfile;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
