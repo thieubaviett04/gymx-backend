@@ -54,6 +54,7 @@ namespace GymX.Infrastructure
             services.AddScoped<IMemberRepository, MemberRepository>();
             services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             services.AddScoped<ITrainerRepository, TrainerRepository>();
+            services.AddScoped<IPackageRepository, PackageRepository>();
             services.AddScoped<IInvoiceRepository, InvoiceRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<INotificationService, NotificationService>();

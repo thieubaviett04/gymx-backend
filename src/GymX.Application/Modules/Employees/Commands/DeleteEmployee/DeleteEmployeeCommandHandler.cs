@@ -22,11 +22,10 @@ public class DeleteEmployeeCommandHandler(
                 Error.NotFound("Employee.NotFound", "Không tìm thấy thông tin nhân viên."));
         }
 
-        var user = await userRepository.GetByIdAsync(employee.UserId, cancellationToken);
-
         employee.SoftDelete();
         employeeRepository.Update(employee);
 
+        var user = await userRepository.GetByIdAsync(employee.UserId, cancellationToken);
         if (user is not null)
         {
             user.Deactivate();

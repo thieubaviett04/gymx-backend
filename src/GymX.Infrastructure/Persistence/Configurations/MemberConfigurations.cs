@@ -35,6 +35,16 @@ public class MemberPackageConfiguration : IEntityTypeConfiguration<MemberPackage
 
         builder.Property(m => m.Status).IsRequired().HasMaxLength(30);
         builder.Property(m => m.PriceAtPurchase).HasColumnType("numeric(12,2)");
+
+        builder.HasOne(m => m.Member)
+            .WithMany()
+            .HasForeignKey(m => m.MemberId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(m => m.Package)
+            .WithMany()
+            .HasForeignKey(m => m.PackageId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 

@@ -1073,6 +1073,8 @@ namespace GymX.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PackageId");
+
                     b.HasIndex("MemberId", "Status");
 
                     b.ToTable("member_packages", (string)null);
@@ -1128,7 +1130,7 @@ namespace GymX.Infrastructure.Migrations
                     b.ToTable("notifications", (string)null);
                 });
 
-            modelBuilder.Entity("GymX.Domain.Entities.Packages.MembershipPackage", b =>
+            modelBuilder.Entity("GymX.Domain.Entities.Packages.Package", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1147,6 +1149,9 @@ namespace GymX.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<int>("DurationDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DurationMonths")
                         .HasColumnType("integer");
 
                     b.Property<DateOnly?>("EffectiveEndDate")
@@ -1177,6 +1182,9 @@ namespace GymX.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<Guid?>("PreviousPackageId")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric(12,2)");
 
@@ -1188,11 +1196,14 @@ namespace GymX.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PackageCode")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.HasIndex("PreviousPackageId");
 
                     b.HasIndex("Status");
 
-                    b.ToTable("membership_packages", (string)null);
+                    b.ToTable("packages", (string)null);
                 });
 
             modelBuilder.Entity("GymX.Domain.Entities.Payroll.PayrollPeriod", b =>
@@ -1713,6 +1724,35 @@ namespace GymX.Infrastructure.Migrations
                         .HasForeignKey("GymX.Domain.Entities.Members.Member", "UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("GymX.Domain.Entities.Members.MemberPackage", b =>
+                {
+                    b.HasOne("GymX.Domain.Entities.Members.Member", "Member")
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GymX.Domain.Entities.Packages.Package", "Package")
+                        .WithMany()
+                        .HasForeignKey("PackageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Member");
+
+                    b.Navigation("Package");
+                });
+
+            modelBuilder.Entity("GymX.Domain.Entities.Packages.Package", b =>
+                {
+                    b.HasOne("GymX.Domain.Entities.Packages.Package", "PreviousPackage")
+                        .WithMany()
+                        .HasForeignKey("PreviousPackageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("PreviousPackage");
                 });
 
             modelBuilder.Entity("GymX.Domain.Entities.Identity.Role", b =>
