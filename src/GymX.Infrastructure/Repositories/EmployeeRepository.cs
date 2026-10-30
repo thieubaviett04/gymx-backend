@@ -57,7 +57,7 @@ public class EmployeeRepository(ApplicationDbContext context) : GenericRepositor
     {
         var query = Context.Employees
             .AsNoTracking()
-            .Where(e => !e.IsDeleted);
+            .Where(e => !e.IsDeleted && e.Position != "ADMIN");
 
         if (!string.IsNullOrWhiteSpace(position))
         {
@@ -128,7 +128,7 @@ public class EmployeeRepository(ApplicationDbContext context) : GenericRepositor
     public async Task<EmployeeDetailDto?> GetEmployeeDetailByIdAsync(Guid employeeId, CancellationToken cancellationToken = default)
     {
         var query = from e in Context.Employees.AsNoTracking()
-            where e.Id == employeeId && !e.IsDeleted
+            where e.Id == employeeId && !e.IsDeleted && e.Position != "ADMIN"
             join u in Context.Users.AsNoTracking() on e.UserId equals u.Id
             join t in Context.Trainers.AsNoTracking() on e.Id equals t.EmployeeId into trainers
             from t in trainers.DefaultIfEmpty()

@@ -16,11 +16,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace GymX.Api.Controllers.EmployeesController;
 
 [ApiController]
-[Route("api/v1/employees")]
+[Route("api/v1/admin/employees")]
 [Authorize]
 public class EmployeesController(ISender sender) : ControllerBase
 {
-    [HttpGet("me")]
+    [HttpGet("/api/v1/employees/me")]
     public async Task<IActionResult> GetMyEmployeeProfile(CancellationToken cancellationToken)
     {
         var result = await sender.Send(new GetMyEmployeeProfileQuery(), cancellationToken);
@@ -38,7 +38,7 @@ public class EmployeesController(ISender sender) : ControllerBase
         };
     }
 
-    [HttpPatch("me")]
+    [HttpPatch("/api/v1/employees/me")]
     public async Task<IActionResult> UpdateMyEmployeeProfile([FromBody] UpdateMyEmployeeProfileRequest request, CancellationToken cancellationToken)
     {
         var result = await sender.Send(UpdateMyEmployeeProfileCommand.FromRequest(request), cancellationToken);
