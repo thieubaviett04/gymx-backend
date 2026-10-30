@@ -21,7 +21,7 @@ public class UpdateEmployeeCommandHandler(
         CancellationToken cancellationToken)
     {
         var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
-        if (employee is null || employee.IsDeleted)
+        if (employee is null || employee.IsDeleted || employee.Position == "ADMIN")
         {
             return Result.Failure<EmployeeDetailDto>(
                 Error.NotFound("Employee.NotFound", "Không tìm thấy thông tin nhân viên."));
@@ -74,17 +74,7 @@ public class UpdateEmployeeCommandHandler(
             }
         }
 
-        var status = string.IsNullOrWhiteSpace(command.EmploymentStatus) ? EmployeeStatus.Active : command.EmploymentStatus;
-        employee.UpdateInfo(command.Position, command.BaseSalaryRate, status);
-
-        if (status == EmployeeStatus.Inactive)
-        {
-            user.Deactivate();
-        }
-        else
-        {
-            user.Activate();
-        }
+        employee.UpdateInfo(command.Position, command.BaseSalaryRate);
 
         if (command.Position == RoleCode.Trainer)
         {

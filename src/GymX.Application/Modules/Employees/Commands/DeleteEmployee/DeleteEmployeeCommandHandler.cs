@@ -16,7 +16,7 @@ public class DeleteEmployeeCommandHandler(
         CancellationToken cancellationToken)
     {
         var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
-        if (employee is null || employee.IsDeleted)
+        if (employee is null || employee.IsDeleted || employee.Position == "ADMIN")
         {
             return Result.Failure<bool>(
                 Error.NotFound("Employee.NotFound", "Không tìm thấy thông tin nhân viên."));
