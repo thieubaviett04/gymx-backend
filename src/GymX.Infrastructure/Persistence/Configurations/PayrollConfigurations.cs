@@ -10,11 +10,24 @@ public class PenaltyRuleConfiguration : IEntityTypeConfiguration<PenaltyRule>
     {
         builder.ToTable("penalty_rules");
 
-        builder.Property(r => r.Name).IsRequired().HasMaxLength(150);
-        builder.Property(r => r.ViolationType).IsRequired().HasMaxLength(50);
-        builder.Property(r => r.FineAmount).HasColumnType("numeric(12,2)");
-        builder.Property(r => r.SeverityLevel).HasMaxLength(20);
-        builder.Property(r => r.Status).IsRequired().HasMaxLength(20);
+        builder.HasIndex(rule => rule.RuleCode)
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false");
+
+        builder.Property(rule => rule.RuleCode).IsRequired().HasMaxLength(10);
+        builder.Property(rule => rule.Name).IsRequired().HasMaxLength(150);
+        builder.Property(rule => rule.ViolationType).IsRequired().HasMaxLength(50);
+        builder.Property(rule => rule.FineAmount).HasColumnType("numeric(12,2)");
+        builder.Property(rule => rule.SeverityLevel).IsRequired().HasMaxLength(20);
+        builder.Property(rule => rule.Status).IsRequired().HasMaxLength(20);
+        builder.Property(rule => rule.EffectiveFrom).HasColumnType("timestamp with time zone").IsRequired();
+        builder.Property(rule => rule.EffectiveTo).HasColumnType("timestamp with time zone");
+        builder.Property(rule => rule.EffectiveDate).HasColumnType("date");
+
+        builder.HasOne(rule => rule.PreviousRule)
+            .WithMany()
+            .HasForeignKey(rule => rule.PreviousRuleId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 

@@ -1344,6 +1344,12 @@ namespace GymX.Infrastructure.Migrations
                     b.Property<DateOnly>("EffectiveDate")
                         .HasColumnType("date");
 
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<decimal>("FineAmount")
                         .HasColumnType("numeric(12,2)");
 
@@ -1361,7 +1367,16 @@ namespace GymX.Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
+                    b.Property<Guid?>("PreviousRuleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RuleCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
                     b.Property<string>("SeverityLevel")
+                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
@@ -1376,6 +1391,12 @@ namespace GymX.Infrastructure.Migrations
                         .HasColumnType("character varying(50)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PreviousRuleId");
+
+                    b.HasIndex("RuleCode")
+                        .IsUnique()
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("penalty_rules", (string)null);
                 });
@@ -1753,6 +1774,16 @@ namespace GymX.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("PreviousPackage");
+                });
+
+            modelBuilder.Entity("GymX.Domain.Entities.Payroll.PenaltyRule", b =>
+                {
+                    b.HasOne("GymX.Domain.Entities.Payroll.PenaltyRule", "PreviousRule")
+                        .WithMany()
+                        .HasForeignKey("PreviousRuleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("PreviousRule");
                 });
 
             modelBuilder.Entity("GymX.Domain.Entities.Identity.Role", b =>
