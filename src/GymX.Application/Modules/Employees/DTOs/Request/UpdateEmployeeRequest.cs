@@ -10,6 +10,7 @@ public class UpdateEmployeeRequest
     public string? Address { get; set; }
     public string Position { get; set; } = string.Empty;
     public decimal BaseSalaryRate { get; set; }
+    public string? EmploymentStatus { get; set; }
 
     public Guid? SpecializationId { get; set; }
     public short? ExperienceYears { get; set; }

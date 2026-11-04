@@ -10,13 +10,13 @@ namespace GymX.Infrastructure.Repositories;
 public class EmployeeRepository(ApplicationDbContext context) : GenericRepository<Employee>(context), IEmployeeRepository
 {
     public Task<Employee?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
-        => DbSet.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.UserId == userId, cancellationToken);
+        => DbSet.FirstOrDefaultAsync(e => e.UserId == userId && !e.IsDeleted, cancellationToken);
 
     public Task<Employee?> GetByNationalIdAsync(string nationalId, CancellationToken cancellationToken = default)
-        => DbSet.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.NationalId == nationalId, cancellationToken);
+        => DbSet.FirstOrDefaultAsync(e => e.NationalId == nationalId && !e.IsDeleted, cancellationToken);
 
     public Task<Employee?> GetByEmployeeCodeAsync(string employeeCode, CancellationToken cancellationToken = default)
-        => DbSet.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.EmployeeCode == employeeCode, cancellationToken);
+        => DbSet.FirstOrDefaultAsync(e => e.EmployeeCode == employeeCode && !e.IsDeleted, cancellationToken);
 
     public async Task<string> GenerateNextEmployeeCodeAsync(CancellationToken cancellationToken = default)
     {

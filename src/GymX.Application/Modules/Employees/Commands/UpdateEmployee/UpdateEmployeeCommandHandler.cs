@@ -74,7 +74,19 @@ public class UpdateEmployeeCommandHandler(
             }
         }
 
-        employee.UpdateInfo(command.Position, command.BaseSalaryRate);
+        employee.UpdateInfo(command.Position, command.BaseSalaryRate, command.EmploymentStatus);
+
+        if (!string.IsNullOrWhiteSpace(command.EmploymentStatus))
+        {
+            if (command.EmploymentStatus == EmployeeStatus.Inactive)
+            {
+                user.SetAccountStatus(AccountStatus.Inactive);
+            }
+            else if (command.EmploymentStatus == EmployeeStatus.Active)
+            {
+                user.SetAccountStatus(AccountStatus.Active);
+            }
+        }
 
         if (command.Position == RoleCode.Trainer)
         {

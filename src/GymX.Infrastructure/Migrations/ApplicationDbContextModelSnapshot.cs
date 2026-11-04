@@ -229,10 +229,12 @@ namespace GymX.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("EmployeeCode")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.HasIndex("NationalId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.HasIndex("Position");
 
@@ -824,15 +826,18 @@ namespace GymX.Infrastructure.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique()
-                        .HasDatabaseName("ix_users_email");
+                        .HasDatabaseName("ix_users_email")
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.HasIndex("GoogleId")
                         .IsUnique()
-                        .HasDatabaseName("ix_users_google_id");
+                        .HasDatabaseName("ix_users_google_id")
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.HasIndex("PhoneNumber")
                         .IsUnique()
-                        .HasDatabaseName("ix_users_phone_number");
+                        .HasDatabaseName("ix_users_phone_number")
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("users", (string)null);
                 });
@@ -1461,6 +1466,16 @@ namespace GymX.Infrastructure.Migrations
                     b.Property<Guid?>("AttendanceRecordId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CancelledBy")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
@@ -1469,6 +1484,10 @@ namespace GymX.Infrastructure.Migrations
 
                     b.Property<Guid>("EmployeeId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("EvidenceUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<decimal>("FineAmount")
                         .HasColumnType("numeric(12,2)");
@@ -1480,7 +1499,8 @@ namespace GymX.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Note")
-                        .HasColumnType("text");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateTime>("OccurredAt")
                         .HasColumnType("timestamp with time zone");
@@ -1491,6 +1511,16 @@ namespace GymX.Infrastructure.Migrations
                     b.Property<Guid>("RecordedBy")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("ViolationCode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AttendanceRecordId");
@@ -1498,6 +1528,13 @@ namespace GymX.Infrastructure.Migrations
                     b.HasIndex("EmployeeId");
 
                     b.HasIndex("PenaltyRuleId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("ViolationCode")
+                        .IsUnique();
+
+                    b.HasIndex("EmployeeId", "OccurredAt");
 
                     b.ToTable("violations", (string)null);
                 });
@@ -1784,6 +1821,32 @@ namespace GymX.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("PreviousRule");
+                });
+
+            modelBuilder.Entity("GymX.Domain.Entities.Payroll.Violation", b =>
+                {
+                    b.HasOne("GymX.Domain.Entities.Attendance.EmployeeAttendanceRecord", "AttendanceRecord")
+                        .WithMany()
+                        .HasForeignKey("AttendanceRecordId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("GymX.Domain.Entities.Employees.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GymX.Domain.Entities.Payroll.PenaltyRule", "PenaltyRule")
+                        .WithMany()
+                        .HasForeignKey("PenaltyRuleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AttendanceRecord");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("PenaltyRule");
                 });
 
             modelBuilder.Entity("GymX.Domain.Entities.Identity.Role", b =>
