@@ -12,9 +12,20 @@ namespace GymX.Infrastructure.Persistence.Configurations
         {
             builder.ToTable("users");
             
-            builder.HasIndex(u => u.Email).HasDatabaseName("ix_users_email").IsUnique();
-            builder.HasIndex(u => u.PhoneNumber).HasDatabaseName("ix_users_phone_number").IsUnique();
-            builder.HasIndex(u => u.GoogleId).HasDatabaseName("ix_users_google_id").IsUnique();
+            builder.HasIndex(u => u.Email)
+                .HasDatabaseName("ix_users_email")
+                .IsUnique()
+                .HasFilter("\"IsDeleted\" = false");
+
+            builder.HasIndex(u => u.PhoneNumber)
+                .HasDatabaseName("ix_users_phone_number")
+                .IsUnique()
+                .HasFilter("\"IsDeleted\" = false");
+
+            builder.HasIndex(u => u.GoogleId)
+                .HasDatabaseName("ix_users_google_id")
+                .IsUnique()
+                .HasFilter("\"IsDeleted\" = false");
 
             builder.Property(u => u.Email).IsRequired().HasMaxLength(255);
             builder.Property(u => u.PasswordHash).HasMaxLength(255);
