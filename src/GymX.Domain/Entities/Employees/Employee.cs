@@ -38,10 +38,18 @@ public class Employee : EntityAuditBase, ISoftDelete
         NationalId = nationalId;
     }
 
-    public void UpdateInfo(string position, decimal baseSalaryRate)
+    public void UpdateInfo(string position, decimal baseSalaryRate, string? employmentStatus = null)
     {
         Position = position;
         BaseSalaryRate = baseSalaryRate;
+        if (!string.IsNullOrWhiteSpace(employmentStatus))
+        {
+            var upper = employmentStatus.Trim().ToUpperInvariant();
+            if (upper == EmployeeStatus.Active || upper == EmployeeStatus.Inactive)
+            {
+                EmploymentStatus = upper;
+            }
+        }
     }
 
     public void Restore(string position, decimal baseSalaryRate, DateOnly hiredAt)

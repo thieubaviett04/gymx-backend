@@ -27,6 +27,14 @@ public class UpdateEmployeeCommandValidator : AbstractValidator<UpdateEmployeeCo
         RuleFor(x => x.BaseSalaryRate)
             .GreaterThanOrEqualTo(0).WithMessage("Hệ lương phải là số thực không âm.");
 
+        When(x => !string.IsNullOrWhiteSpace(x.EmploymentStatus), () =>
+        {
+            RuleFor(x => x.EmploymentStatus!)
+                .Must(s => s.Equals(EmployeeStatus.Active, StringComparison.OrdinalIgnoreCase) ||
+                           s.Equals(EmployeeStatus.Inactive, StringComparison.OrdinalIgnoreCase))
+                .WithMessage("Trạng thái làm việc không hợp lệ.");
+        });
+
         When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber), () =>
         {
             RuleFor(x => x.PhoneNumber!)

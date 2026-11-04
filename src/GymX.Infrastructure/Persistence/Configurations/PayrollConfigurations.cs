@@ -37,11 +37,49 @@ public class ViolationConfiguration : IEntityTypeConfiguration<Violation>
     {
         builder.ToTable("violations");
 
+        builder.HasIndex(v => v.ViolationCode)
+            .IsUnique();
+
+        builder.Property(v => v.ViolationCode)
+            .IsRequired()
+            .HasMaxLength(30);
+
+        builder.Property(v => v.FineAmount)
+            .HasColumnType("numeric(12,2)");
+
+        builder.Property(v => v.Status)
+            .IsRequired()
+            .HasMaxLength(20);
+
+        builder.Property(v => v.EvidenceUrl)
+            .HasMaxLength(1000);
+
+        builder.Property(v => v.CancellationReason)
+            .HasMaxLength(500);
+
+        builder.Property(v => v.Note)
+            .HasMaxLength(1000);
+
         builder.HasIndex(v => v.EmployeeId);
         builder.HasIndex(v => v.PenaltyRuleId);
         builder.HasIndex(v => v.AttendanceRecordId);
+        builder.HasIndex(v => new { v.EmployeeId, v.OccurredAt });
+        builder.HasIndex(v => v.Status);
 
-        builder.Property(v => v.FineAmount).HasColumnType("numeric(12,2)");
+        builder.HasOne(v => v.Employee)
+            .WithMany()
+            .HasForeignKey(v => v.EmployeeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(v => v.PenaltyRule)
+            .WithMany()
+            .HasForeignKey(v => v.PenaltyRuleId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(v => v.AttendanceRecord)
+            .WithMany()
+            .HasForeignKey(v => v.AttendanceRecordId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
 
@@ -55,8 +93,6 @@ public class SalaryFormulaConfiguration : IEntityTypeConfiguration<SalaryFormula
         builder.Property(f => f.BaseRateType).IsRequired().HasMaxLength(20);
         builder.Property(f => f.BaseRate).HasColumnType("numeric(12,2)");
         builder.Property(f => f.Status).IsRequired().HasMaxLength(20);
-        
-        // Map CreatorId property in C# to created_by column in DB
         builder.Property(f => f.CreatorId).HasColumnName("created_by");
     }
 }

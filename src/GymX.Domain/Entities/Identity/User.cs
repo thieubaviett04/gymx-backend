@@ -129,6 +129,11 @@ namespace GymX.Domain.Entities.Identity
             DeletedDate = null;
         }
 
+        public void SetAccountStatus(string status)
+        {
+            Status = status;
+        }
+
         public void AssignRole(Guid roleId)
         {
             if (UserRoles.Any(ur => ur.RoleId == roleId)) return;
