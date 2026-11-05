@@ -19,7 +19,7 @@ public record UpdateEmployeeCommand(
     string? EmploymentStatus = null,
     Guid? SpecializationId = null,
     short? ExperienceYears = null,
-    decimal? SalaryCoefficient = null,
+    decimal? PricePerSession = null,
     string? Description = null) : IRequest<Result<EmployeeDetailDto>>
 {
     public static UpdateEmployeeCommand FromRequest(Guid id, UpdateEmployeeRequest req) => new(
@@ -35,6 +35,6 @@ public record UpdateEmployeeCommand(
         string.IsNullOrWhiteSpace(req.EmploymentStatus) ? null : req.EmploymentStatus.Trim().ToUpperInvariant(),
         req.SpecializationId,
         req.ExperienceYears,
-        req.SalaryCoefficient,
+        req.PricePerSession,
         string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim());
 }

@@ -96,7 +96,7 @@ public class UpdateEmployeeCommandHandler(
                 trainer.UpdateTrainerInfo(
                     command.SpecializationId ?? trainer.SpecializationId,
                     command.ExperienceYears ?? trainer.ExperienceYears,
-                    command.SalaryCoefficient,
+                    command.PricePerSession ?? trainer.PricePerSession,
                     command.Description);
                 trainerRepository.Update(trainer);
             }
@@ -106,7 +106,7 @@ public class UpdateEmployeeCommandHandler(
                     employee.Id,
                     command.SpecializationId ?? Guid.Empty,
                     command.ExperienceYears ?? 1,
-                    command.SalaryCoefficient,
+                    command.PricePerSession ?? 0,
                     command.Description);
                 await trainerRepository.AddAsync(newTrainer, cancellationToken);
             }

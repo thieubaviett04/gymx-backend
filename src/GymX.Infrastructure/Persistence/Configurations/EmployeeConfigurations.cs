@@ -53,7 +53,7 @@ public class TrainerConfiguration : IEntityTypeConfiguration<Trainer>
         
         builder.HasIndex(t => t.EmployeeId).IsUnique();
         
-        builder.Property(t => t.SalaryCoefficient).HasColumnType("numeric(5,2)");
+        builder.Property(t => t.PricePerSession).IsRequired().HasColumnType("numeric(12,2)").HasDefaultValue(0);
         builder.Property(t => t.RatingAvg).HasColumnType("numeric(3,2)");
 
         builder.HasOne<Employee>()

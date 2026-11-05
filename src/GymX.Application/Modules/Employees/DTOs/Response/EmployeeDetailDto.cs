@@ -28,7 +28,7 @@ public class TrainerDetailInfoDto
     public Guid SpecializationId { get; set; }
     public string SpecializationName { get; set; } = string.Empty;
     public short ExperienceYears { get; set; }
-    public decimal? SalaryCoefficient { get; set; }
+    public decimal PricePerSession { get; set; }
     public string? Description { get; set; }
     public decimal RatingAvg { get; set; }
     public int RatingCount { get; set; }

@@ -7,21 +7,21 @@ public class Trainer : EntityAuditBase
     public Guid EmployeeId { get; private set; }
     public Guid SpecializationId { get; private set; }
     public short ExperienceYears { get; private set; }
-    public decimal? SalaryCoefficient { get; private set; }
+    public decimal PricePerSession { get; private set; }
     public string? Description { get; private set; }
     public decimal RatingAvg { get; private set; }
     public int RatingCount { get; private set; }
 
     protected Trainer() { }
 
-    public static Trainer Create(Guid employeeId, Guid specializationId, short experienceYears, decimal? salaryCoefficient = null, string? description = null)
+    public static Trainer Create(Guid employeeId, Guid specializationId, short experienceYears, decimal pricePerSession = 0, string? description = null)
     {
         return new Trainer
         {
             EmployeeId = employeeId,
             SpecializationId = specializationId,
             ExperienceYears = experienceYears,
-            SalaryCoefficient = salaryCoefficient,
+            PricePerSession = pricePerSession,
             Description = description,
             RatingAvg = 0,
             RatingCount = 0
@@ -33,11 +33,11 @@ public class Trainer : EntityAuditBase
         Description = description;
     }
 
-    public void UpdateTrainerInfo(Guid specializationId, short experienceYears, decimal? salaryCoefficient, string? description)
+    public void UpdateTrainerInfo(Guid specializationId, short experienceYears, decimal pricePerSession, string? description)
     {
         SpecializationId = specializationId;
         ExperienceYears = experienceYears;
-        SalaryCoefficient = salaryCoefficient;
+        PricePerSession = pricePerSession;
         Description = description;
     }
 

@@ -16,5 +16,6 @@ public class EmployeeSummaryDto
     public string? AvatarUrl { get; set; }
     public string? TrainerSpecialization { get; set; }
     public short? TrainerExperienceYears { get; set; }
+    public decimal? TrainerPricePerSession { get; set; }
     public DateTime CreatedDate { get; set; }
 }

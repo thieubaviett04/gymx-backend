@@ -44,11 +44,11 @@ public class CreateEmployeeCommandValidator : AbstractValidator<CreateEmployeeCo
                     .WithMessage("Năm kinh nghiệm của huấn luyện viên phải lớn hơn 0.");
             });
 
-            When(x => x.SalaryCoefficient.HasValue, () =>
+            When(x => x.PricePerSession.HasValue, () =>
             {
-                RuleFor(x => x.SalaryCoefficient!.Value)
+                RuleFor(x => x.PricePerSession!.Value)
                     .GreaterThanOrEqualTo(0)
-                    .WithMessage("Giá 1 buổi tập hoặc hệ số lương phải không âm.");
+                    .WithMessage("Giá 1 buổi dạy của huấn luyện viên phải không âm.");
             });
         });
     }

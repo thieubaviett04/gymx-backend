@@ -18,7 +18,7 @@ public record CreateEmployeeCommand(
     DateOnly? HiredAt = null,
     Guid? SpecializationId = null,
     short? ExperienceYears = null,
-    decimal? SalaryCoefficient = null,
+    decimal? PricePerSession = null,
     string? Description = null) : IRequest<Result<EmployeeDetailDto>>
 {
     public static CreateEmployeeCommand FromRequest(CreateEmployeeRequest req) => new(
@@ -34,6 +34,6 @@ public record CreateEmployeeCommand(
         req.HiredAt,
         req.SpecializationId,
         req.ExperienceYears,
-        req.SalaryCoefficient,
+        req.PricePerSession,
         string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim());
 }
