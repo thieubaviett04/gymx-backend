@@ -316,14 +316,16 @@ namespace GymX.Infrastructure.Migrations
                     b.Property<DateTime?>("LastModifiedDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<decimal>("PricePerSession")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(12,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<decimal>("RatingAvg")
                         .HasColumnType("numeric(3,2)");
 
                     b.Property<int>("RatingCount")
                         .HasColumnType("integer");
-
-                    b.Property<decimal?>("SalaryCoefficient")
-                        .HasColumnType("numeric(5,2)");
 
                     b.Property<Guid>("SpecializationId")
                         .HasColumnType("uuid");

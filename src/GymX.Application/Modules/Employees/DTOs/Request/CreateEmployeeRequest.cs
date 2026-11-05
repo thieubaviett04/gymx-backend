@@ -15,6 +15,6 @@ public class CreateEmployeeRequest
 
     public Guid? SpecializationId { get; set; }
     public short? ExperienceYears { get; set; }
-    public decimal? SalaryCoefficient { get; set; }
+    public decimal? PricePerSession { get; set; }
     public string? Description { get; set; }
 }

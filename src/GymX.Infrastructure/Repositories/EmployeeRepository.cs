@@ -118,6 +118,7 @@ public class EmployeeRepository(ApplicationDbContext context) : GenericRepositor
                 AvatarUrl = x.User.AvatarUrl,
                 TrainerSpecialization = x.SpecializationName,
                 TrainerExperienceYears = x.Trainer != null ? (short?)x.Trainer.ExperienceYears : null,
+                TrainerPricePerSession = x.Trainer != null ? (decimal?)x.Trainer.PricePerSession : null,
                 CreatedDate = x.Employee.CreatedDate
             })
             .ToListAsync(cancellationToken);
@@ -159,7 +160,7 @@ public class EmployeeRepository(ApplicationDbContext context) : GenericRepositor
                     SpecializationId = t.SpecializationId,
                     SpecializationName = s != null ? s.Name : string.Empty,
                     ExperienceYears = t.ExperienceYears,
-                    SalaryCoefficient = t.SalaryCoefficient,
+                    PricePerSession = t.PricePerSession,
                     Description = t.Description,
                     RatingAvg = t.RatingAvg,
                     RatingCount = t.RatingCount

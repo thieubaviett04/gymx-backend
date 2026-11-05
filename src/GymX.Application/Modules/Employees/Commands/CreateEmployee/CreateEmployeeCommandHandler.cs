@@ -74,7 +74,7 @@ public class CreateEmployeeCommandHandler(
                 employee.Id,
                 command.SpecializationId ?? Guid.Empty,
                 command.ExperienceYears ?? 1,
-                command.SalaryCoefficient,
+                command.PricePerSession ?? 0,
                 command.Description);
             await trainerRepository.AddAsync(trainer, cancellationToken);
         }
