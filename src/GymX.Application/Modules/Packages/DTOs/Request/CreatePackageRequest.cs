@@ -9,5 +9,4 @@ public class CreatePackageRequest
     public string? Description { get; set; }
     public Guid? CategoryId { get; set; }
     public DateOnly EffectiveStartDate { get; set; }
-    public DateOnly? EffectiveEndDate { get; set; }
 }

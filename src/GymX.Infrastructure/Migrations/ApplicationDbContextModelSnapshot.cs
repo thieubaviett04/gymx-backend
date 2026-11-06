@@ -1164,9 +1164,6 @@ namespace GymX.Infrastructure.Migrations
                     b.Property<int>("DurationMonths")
                         .HasColumnType("integer");
 
-                    b.Property<DateOnly?>("EffectiveEndDate")
-                        .HasColumnType("date");
-
                     b.Property<DateOnly>("EffectiveStartDate")
                         .HasColumnType("date");
 

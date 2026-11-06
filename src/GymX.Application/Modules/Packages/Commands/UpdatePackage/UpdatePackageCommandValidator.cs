@@ -17,13 +17,6 @@ public class UpdatePackageCommandValidator : AbstractValidator<UpdatePackageComm
         RuleFor(x => x.DurationMonths)
             .GreaterThan(0).WithMessage("Thời hạn gói tập phải là số nguyên dương.");
 
-        When(x => x.EffectiveEndDate.HasValue, () =>
-        {
-            RuleFor(x => x.EffectiveEndDate!.Value)
-                .GreaterThanOrEqualTo(x => x.EffectiveStartDate)
-                .WithMessage("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu áp dụng.");
-        });
-
         When(x => x.CategoryId.HasValue, () =>
         {
             RuleFor(x => x.CategoryId!.Value)

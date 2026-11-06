@@ -15,7 +15,6 @@ public class Package : EntityAuditBase, ISoftDelete
     public string? Description { get; private set; }
     public string Status { get; private set; } = PackageStatus.Active;
     public DateOnly EffectiveStartDate { get; private set; }
-    public DateOnly? EffectiveEndDate { get; private set; }
 
     public Guid? CategoryId { get; private set; }
     public virtual PackageCategory? Category { get; private set; }
@@ -49,7 +48,6 @@ public class Package : EntityAuditBase, ISoftDelete
         decimal price,
         int durationMonths,
         DateOnly effectiveStartDate,
-        DateOnly? effectiveEndDate = null,
         string? description = null,
         string? customCode = null,
         Guid? previousPackageId = null,
@@ -69,7 +67,6 @@ public class Package : EntityAuditBase, ISoftDelete
             DurationDays = durationMonths * 30,
             Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
             EffectiveStartDate = effectiveStartDate,
-            EffectiveEndDate = effectiveEndDate,
             Status = normalizedStatus,
             PreviousPackageId = previousPackageId,
             CategoryId = categoryId
@@ -86,7 +83,6 @@ public class Package : EntityAuditBase, ISoftDelete
         decimal price,
         int durationMonths,
         DateOnly effectiveStartDate,
-        DateOnly? effectiveEndDate,
         string? status,
         string? description = null,
         Guid? categoryId = null)
@@ -97,7 +93,6 @@ public class Package : EntityAuditBase, ISoftDelete
         DurationDays = durationMonths * 30;
         Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
         EffectiveStartDate = effectiveStartDate;
-        EffectiveEndDate = effectiveEndDate;
         CategoryId = categoryId;
 
         if (!string.IsNullOrWhiteSpace(status) && PackageStatus.IsValid(status))
@@ -116,10 +111,9 @@ public class Package : EntityAuditBase, ISoftDelete
         Status = PackageStatus.Active;
     }
 
-    public void Discontinue(DateOnly? endDate = null)
+    public void Discontinue()
     {
         Status = PackageStatus.Discontinued;
-        EffectiveEndDate = endDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
     }
 
     public void SoftDelete()

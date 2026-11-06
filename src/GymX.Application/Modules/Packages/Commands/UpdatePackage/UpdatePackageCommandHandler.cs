@@ -65,7 +65,6 @@ public class UpdatePackageCommandHandler(
                     command.Price!.Value,
                     command.DurationMonths,
                     command.EffectiveStartDate,
-                    command.EffectiveEndDate,
                     command.Description,
                     previousPackageId: package.Id,
                     categoryId: targetCategoryId);
@@ -101,7 +100,6 @@ public class UpdatePackageCommandHandler(
             command.Price!.Value,
             command.DurationMonths,
             command.EffectiveStartDate,
-            command.EffectiveEndDate,
             command.Status,
             command.Description,
             targetCategoryId);
@@ -133,7 +131,6 @@ public class UpdatePackageCommandHandler(
             Description = pkg.Description,
             Status = pkg.Status,
             EffectiveStartDate = pkg.EffectiveStartDate,
-            EffectiveEndDate = pkg.EffectiveEndDate,
             CategoryId = pkg.CategoryId,
             CategoryCode = categoryCode,
             CategoryName = categoryName,

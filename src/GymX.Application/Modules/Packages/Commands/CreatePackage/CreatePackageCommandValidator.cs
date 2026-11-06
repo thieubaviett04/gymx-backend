@@ -21,13 +21,6 @@ public class CreatePackageCommandValidator : AbstractValidator<CreatePackageComm
             .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow))
             .WithMessage("Ngày bắt đầu áp dụng không được chọn ngày ở quá khứ.");
 
-        When(x => x.EffectiveEndDate.HasValue, () =>
-        {
-            RuleFor(x => x.EffectiveEndDate!.Value)
-                .GreaterThanOrEqualTo(x => x.EffectiveStartDate)
-                .WithMessage("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu áp dụng.");
-        });
-
         When(x => x.CategoryId.HasValue, () =>
         {
             RuleFor(x => x.CategoryId!.Value)

@@ -10,7 +10,6 @@ public record CreatePackageCommand(
     decimal? Price,
     int DurationMonths,
     DateOnly EffectiveStartDate,
-    DateOnly? EffectiveEndDate,
     string? Description,
     Guid? CategoryId = null,
     string? Status = null) : IRequest<Result<PackageDetailDto>>
@@ -20,7 +19,6 @@ public record CreatePackageCommand(
         req.Price,
         req.DurationMonths,
         req.EffectiveStartDate,
-        req.EffectiveEndDate,
         string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim(),
         req.CategoryId,
         req.Status?.Trim().ToUpperInvariant());

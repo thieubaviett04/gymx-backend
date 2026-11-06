@@ -66,9 +66,7 @@ public class PackageRepository(ApplicationDbContext context)
 
         if (enforceEffectiveDates)
         {
-            query = query.Where(p =>
-                p.EffectiveStartDate <= today &&
-                (!p.EffectiveEndDate.HasValue || p.EffectiveEndDate.Value >= today));
+            query = query.Where(p => p.EffectiveStartDate <= today);
         }
 
         if (!string.IsNullOrWhiteSpace(durationFilter))
@@ -115,7 +113,6 @@ public class PackageRepository(ApplicationDbContext context)
                 Description = p.Description,
                 Status = p.Status,
                 EffectiveStartDate = p.EffectiveStartDate,
-                EffectiveEndDate = p.EffectiveEndDate,
                 CategoryId = p.CategoryId,
                 CategoryCode = p.Category != null ? p.Category.Code : null,
                 CategoryName = p.Category != null ? p.Category.Name : null,
@@ -159,7 +156,6 @@ public class PackageRepository(ApplicationDbContext context)
             Description = package.Description,
             Status = package.Status,
             EffectiveStartDate = package.EffectiveStartDate,
-            EffectiveEndDate = package.EffectiveEndDate,
             CategoryId = package.CategoryId,
             CategoryCode = package.Category?.Code,
             CategoryName = package.Category?.Name,
