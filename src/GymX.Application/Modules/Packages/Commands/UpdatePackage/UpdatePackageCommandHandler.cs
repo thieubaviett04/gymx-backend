@@ -32,8 +32,15 @@ public class UpdatePackageCommandHandler(
         var hasEverBeenPurchased = await packageRepository.HasEverBeenPurchasedAsync(package.Id, cancellationToken);
         if (hasEverBeenPurchased)
         {
-            return Result.Failure<PackageDetailDto>(
-                Error.Conflict("Package.CannotModifyPurchasedPackage", "Gói tập này đã phát sinh dữ liệu đăng ký của hội viên trong lịch sử, không thể chỉnh sửa để đảm bảo tính toàn vẹn của dữ liệu hợp đồng."));
+            var isAttemptingPriceOrDurationChange =
+                (command.Price.HasValue && command.Price.Value != package.Price) ||
+                (command.DurationMonths != package.DurationMonths);
+
+            if (isAttemptingPriceOrDurationChange)
+            {
+                return Result.Failure<PackageDetailDto>(
+                    Error.Conflict("Package.CannotModifyPriceOrDuration", "Gói tập này đã phát sinh dữ liệu đăng ký của hội viên, không thể sửa đổi giá hoặc thời hạn. Vui lòng tạo gói tập mới nếu bạn muốn thay đổi chính sách giá."));
+            }
         }
 
         string? categoryCode = null;
