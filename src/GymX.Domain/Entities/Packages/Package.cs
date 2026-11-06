@@ -12,7 +12,6 @@ public class Package : EntityAuditBase, ISoftDelete
     public decimal Price { get; private set; }
     public int DurationMonths { get; private set; }
     public int DurationDays { get; private set; }
-    public int? MaxCheckins { get; private set; }
     public string? Description { get; private set; }
     public string Status { get; private set; } = PackageStatus.Active;
     public DateOnly EffectiveStartDate { get; private set; }
@@ -48,7 +47,6 @@ public class Package : EntityAuditBase, ISoftDelete
         int durationMonths,
         DateOnly effectiveStartDate,
         DateOnly? effectiveEndDate = null,
-        int? maxCheckins = null,
         string? description = null,
         string? customCode = null,
         Guid? previousPackageId = null)
@@ -63,7 +61,6 @@ public class Package : EntityAuditBase, ISoftDelete
             Price = price,
             DurationMonths = durationMonths,
             DurationDays = durationMonths * 30,
-            MaxCheckins = maxCheckins,
             Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
             EffectiveStartDate = effectiveStartDate,
             EffectiveEndDate = effectiveEndDate,
@@ -84,7 +81,6 @@ public class Package : EntityAuditBase, ISoftDelete
         DateOnly effectiveStartDate,
         DateOnly? effectiveEndDate,
         string? status,
-        int? maxCheckins = null,
         string? description = null)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -93,7 +89,6 @@ public class Package : EntityAuditBase, ISoftDelete
         Price = price;
         DurationMonths = durationMonths;
         DurationDays = durationMonths * 30;
-        MaxCheckins = maxCheckins;
         Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
         EffectiveStartDate = effectiveStartDate;
         EffectiveEndDate = effectiveEndDate;

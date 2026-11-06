@@ -11,7 +11,6 @@ public record CreatePackageCommand(
     int DurationMonths,
     DateOnly EffectiveStartDate,
     DateOnly? EffectiveEndDate,
-    int? MaxCheckins,
     string? Description) : IRequest<Result<PackageDetailDto>>
 {
     public static CreatePackageCommand FromRequest(CreatePackageRequest req) => new(
@@ -20,6 +19,5 @@ public record CreatePackageCommand(
         req.DurationMonths,
         req.EffectiveStartDate,
         req.EffectiveEndDate,
-        req.MaxCheckins,
         string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim());
 }

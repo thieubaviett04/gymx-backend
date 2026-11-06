@@ -17,20 +17,20 @@ public class PackageRepository(ApplicationDbContext context)
     public Task<bool> ExistsCodeAsync(string packageCode, CancellationToken cancellationToken = default)
         => DbSet.AnyAsync(p => p.PackageCode == packageCode && !p.IsDeleted, cancellationToken);
 
-    public async Task<bool> IsPackageInUseAsync(Guid packageId, CancellationToken cancellationToken = default)
+    public Task<bool> IsPackageInUseAsync(Guid packageId, CancellationToken cancellationToken = default)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        return await Context.MemberPackages.AnyAsync(mp =>
+        return Context.MemberPackages.AnyAsync(mp =>
             mp.PackageId == packageId &&
             mp.Status == MemberPackageStatus.Active &&
             mp.EndDate >= today,
             cancellationToken);
     }
 
-    public async Task<int> CountActiveMembersAsync(Guid packageId, CancellationToken cancellationToken = default)
+    public Task<int> CountActiveMembersAsync(Guid packageId, CancellationToken cancellationToken = default)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        return await Context.MemberPackages.CountAsync(mp =>
+        return Context.MemberPackages.CountAsync(mp =>
             mp.PackageId == packageId &&
             mp.Status == MemberPackageStatus.Active &&
             mp.EndDate >= today,
@@ -84,9 +84,12 @@ public class PackageRepository(ApplicationDbContext context)
         var totalCount = await query.LongCountAsync(cancellationToken);
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
+        var safePageIndex = Math.Max(1, pageIndex);
+        var safePageSize = Math.Max(1, pageSize);
+
         var items = await query
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
+            .Skip((safePageIndex - 1) * safePageSize)
+            .Take(safePageSize)
             .Select(p => new PackageSummaryDto
             {
                 Id = p.Id,
@@ -95,7 +98,6 @@ public class PackageRepository(ApplicationDbContext context)
                 Price = p.Price,
                 DurationMonths = p.DurationMonths,
                 DurationDays = p.DurationDays,
-                MaxCheckins = p.MaxCheckins,
                 Description = p.Description,
                 Status = p.Status,
                 EffectiveStartDate = p.EffectiveStartDate,
@@ -110,7 +112,7 @@ public class PackageRepository(ApplicationDbContext context)
             })
             .ToListAsync(cancellationToken);
 
-        return new PagedResult<PackageSummaryDto>(items, totalCount, pageIndex, pageSize);
+        return new PagedResult<PackageSummaryDto>(items, totalCount, safePageIndex, safePageSize);
     }
 
     public async Task<PackageDetailDto?> GetPackageDetailByIdAsync(Guid packageId, CancellationToken cancellationToken = default)
@@ -136,7 +138,6 @@ public class PackageRepository(ApplicationDbContext context)
             Price = package.Price,
             DurationMonths = package.DurationMonths,
             DurationDays = package.DurationDays,
-            MaxCheckins = package.MaxCheckins,
             Description = package.Description,
             Status = package.Status,
             EffectiveStartDate = package.EffectiveStartDate,

@@ -4,6 +4,8 @@ using GymX.Application.Modules.Packages.DTOs.Response;
 using GymX.Domain.Common.Models;
 using GymX.Domain.Entities.Packages;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace GymX.Application.Modules.Packages.Commands.UpdatePackage;
 
@@ -47,7 +49,6 @@ public class UpdatePackageCommandHandler(
                     command.DurationMonths,
                     command.EffectiveStartDate,
                     command.EffectiveEndDate,
-                    command.MaxCheckins,
                     command.Description,
                     previousPackageId: package.Id);
 
@@ -62,7 +63,7 @@ public class UpdatePackageCommandHandler(
                         saveSucceeded = true;
                         break;
                     }
-                    catch (Exception ex) when (IsUniqueConstraintViolation(ex) && attempt < MaxSaveRetries)
+                    catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex) && attempt < MaxSaveRetries)
                     {
                         newPackage.RegenerateCode(Package.GenerateRandomCode());
                     }
@@ -88,7 +89,6 @@ public class UpdatePackageCommandHandler(
             command.EffectiveStartDate,
             command.EffectiveEndDate,
             command.Status,
-            command.MaxCheckins,
             command.Description);
 
         packageRepository.Update(package);
@@ -97,13 +97,8 @@ public class UpdatePackageCommandHandler(
         return Result.Success(await MapDetailAsync(package, cancellationToken));
     }
 
-    private static bool IsUniqueConstraintViolation(Exception ex)
-    {
-        var text = ex.ToString();
-        return text.Contains("23505") ||
-               text.Contains("duplicate key", StringComparison.OrdinalIgnoreCase) ||
-               text.Contains("unique constraint", StringComparison.OrdinalIgnoreCase);
-    }
+    private static bool IsUniqueConstraintViolation(DbUpdateException ex) =>
+        ex.InnerException is PostgresException pgEx && pgEx.SqlState == PostgresErrorCodes.UniqueViolation;
 
     private async Task<PackageDetailDto> MapDetailAsync(Package pkg, CancellationToken ct, string? previousCode = null)
     {
@@ -116,7 +111,6 @@ public class UpdatePackageCommandHandler(
             Price = pkg.Price,
             DurationMonths = pkg.DurationMonths,
             DurationDays = pkg.DurationDays,
-            MaxCheckins = pkg.MaxCheckins,
             Description = pkg.Description,
             Status = pkg.Status,
             EffectiveStartDate = pkg.EffectiveStartDate,

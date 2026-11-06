@@ -4,6 +4,8 @@ using GymX.Application.Modules.Packages.DTOs.Response;
 using GymX.Domain.Common.Models;
 using GymX.Domain.Entities.Packages;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace GymX.Application.Modules.Packages.Commands.CreatePackage;
 
@@ -28,7 +30,6 @@ public class CreatePackageCommandHandler(
             command.DurationMonths,
             command.EffectiveStartDate,
             command.EffectiveEndDate,
-            command.MaxCheckins,
             command.Description,
             packageCode);
 
@@ -43,7 +44,7 @@ public class CreatePackageCommandHandler(
                 saveSucceeded = true;
                 break;
             }
-            catch (Exception ex) when (IsUniqueConstraintViolation(ex) && attempt < MaxSaveRetries)
+            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex) && attempt < MaxSaveRetries)
             {
                 package.RegenerateCode(Package.GenerateRandomCode());
             }
@@ -63,7 +64,6 @@ public class CreatePackageCommandHandler(
             Price = package.Price,
             DurationMonths = package.DurationMonths,
             DurationDays = package.DurationDays,
-            MaxCheckins = package.MaxCheckins,
             Description = package.Description,
             Status = package.Status,
             EffectiveStartDate = package.EffectiveStartDate,
@@ -77,11 +77,6 @@ public class CreatePackageCommandHandler(
         return Result.Success(resultDto);
     }
 
-    private static bool IsUniqueConstraintViolation(Exception ex)
-    {
-        var text = ex.ToString();
-        return text.Contains("23505") ||
-               text.Contains("duplicate key", StringComparison.OrdinalIgnoreCase) ||
-               text.Contains("unique constraint", StringComparison.OrdinalIgnoreCase);
-    }
+    private static bool IsUniqueConstraintViolation(DbUpdateException ex) =>
+        ex.InnerException is PostgresException pgEx && pgEx.SqlState == PostgresErrorCodes.UniqueViolation;
 }

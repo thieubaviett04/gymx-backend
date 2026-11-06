@@ -8,7 +8,6 @@ public class PackageSummaryDto
     public decimal Price { get; set; }
     public int DurationMonths { get; set; }
     public int DurationDays { get; set; }
-    public int? MaxCheckins { get; set; }
     public string? Description { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateOnly EffectiveStartDate { get; set; }

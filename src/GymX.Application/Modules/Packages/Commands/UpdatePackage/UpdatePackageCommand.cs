@@ -13,7 +13,6 @@ public record UpdatePackageCommand(
     DateOnly EffectiveStartDate,
     DateOnly? EffectiveEndDate,
     string? Status,
-    int? MaxCheckins,
     string? Description,
     string? Mode = null) : IRequest<Result<PackageDetailDto>>
 {
@@ -25,7 +24,6 @@ public record UpdatePackageCommand(
         req.EffectiveStartDate,
         req.EffectiveEndDate,
         req.Status?.Trim().ToUpperInvariant(),
-        req.MaxCheckins,
         string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim(),
         req.Mode?.Trim().ToUpperInvariant());
 }
