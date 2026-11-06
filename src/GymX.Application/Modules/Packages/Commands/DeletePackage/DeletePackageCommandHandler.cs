@@ -1,7 +1,6 @@
 using GymX.Application.Common.Interfaces;
 using GymX.Application.Common.Interfaces.Repositories;
 using GymX.Domain.Common.Models;
-using GymX.Domain.Constants;
 using MediatR;
 
 namespace GymX.Application.Modules.Packages.Commands.DeletePackage;
@@ -23,12 +22,8 @@ public class DeletePackageCommandHandler(
         var isBeingUsed = await packageRepository.IsPackageInUseAsync(package.Id, cancellationToken);
         if (isBeingUsed)
         {
-            var message = package.Status == PackageStatus.Discontinued
-                ? "Gói tập này đã ngừng kinh doanh nhưng hiện vẫn còn hội viên đang trong thời hạn sử dụng thẻ, không thể xóa để bảo toàn dữ liệu lịch sử."
-                : "Không thể xóa do đang có người sử dụng, bạn có muốn cập nhật trạng thái 'Ngừng kinh doanh' cho gói tập này không?";
-
             return Result.Failure<bool>(
-                Error.Conflict("Package.CannotDeleteInUse", message));
+                Error.Conflict("Package.CannotDeleteInUse", "Gói tập này hiện đang có hội viên sử dụng, không thể xóa."));
         }
 
         package.SoftDelete();
