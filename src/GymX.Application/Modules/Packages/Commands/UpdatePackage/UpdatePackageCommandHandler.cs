@@ -24,23 +24,10 @@ public class UpdatePackageCommandHandler(
         }
 
         var hasEverBeenPurchased = await packageRepository.HasEverBeenPurchasedAsync(package.Id, cancellationToken);
-        if (hasEverBeenPurchased)
+        if (hasEverBeenPurchased && package.Status == PackageStatus.Discontinued)
         {
-            if (package.Status == PackageStatus.Discontinued)
-            {
-                return Result.Failure<PackageDetailDto>(
-                    Error.Conflict("Package.CannotModifyDiscontinued", "Không thể chỉnh sửa gói tập đã ngừng kinh doanh để đảm bảo tính toàn vẹn của dữ liệu lịch sử và hợp đồng hội viên."));
-            }
-
-            var isAttemptingPriceOrDurationChange =
-                (command.Price.HasValue && command.Price.Value != package.Price) ||
-                (command.DurationMonths != package.DurationMonths);
-
-            if (isAttemptingPriceOrDurationChange)
-            {
-                return Result.Failure<PackageDetailDto>(
-                    Error.Conflict("Package.CannotModifyPriceOrDuration", "Gói tập này đã phát sinh dữ liệu đăng ký của hội viên, không thể sửa đổi giá hoặc thời hạn. Vui lòng tạo gói tập mới nếu bạn muốn thay đổi chính sách giá."));
-            }
+            return Result.Failure<PackageDetailDto>(
+                Error.Conflict("Package.CannotModifyDiscontinued", "Không thể chỉnh sửa gói tập đã ngừng kinh doanh để đảm bảo tính toàn vẹn của dữ liệu lịch sử và hợp đồng hội viên."));
         }
 
         string? categoryCode = null;
