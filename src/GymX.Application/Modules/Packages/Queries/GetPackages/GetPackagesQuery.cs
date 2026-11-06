@@ -11,4 +11,5 @@ public record GetPackagesQuery(
     string? SortBy,
     Guid? CategoryId = null,
     int PageIndex = 1,
-    int PageSize = 10) : IRequest<Result<PagedResult<PackageSummaryDto>>>;
+    int PageSize = 10,
+    bool EnforceEffectiveDates = false) : IRequest<Result<PagedResult<PackageSummaryDto>>>;

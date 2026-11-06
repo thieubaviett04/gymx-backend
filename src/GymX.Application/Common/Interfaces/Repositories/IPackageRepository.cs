@@ -18,6 +18,7 @@ public interface IPackageRepository : IGenericRepository<Package>
         Guid? categoryId,
         int pageIndex,
         int pageSize,
+        bool enforceEffectiveDates = false,
         CancellationToken cancellationToken = default);
     Task<PackageDetailDto?> GetPackageDetailByIdAsync(Guid packageId, CancellationToken cancellationToken = default);
 }

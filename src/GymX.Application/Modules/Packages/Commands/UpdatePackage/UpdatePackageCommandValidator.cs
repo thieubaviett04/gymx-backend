@@ -30,5 +30,12 @@ public class UpdatePackageCommandValidator : AbstractValidator<UpdatePackageComm
                 .NotEmpty()
                 .WithMessage("Mã loại hình gói tập không hợp lệ.");
         });
+
+        When(x => !string.IsNullOrWhiteSpace(x.Status), () =>
+        {
+            RuleFor(x => x.Status!)
+                .Must(GymX.Domain.Constants.PackageStatus.IsValid)
+                .WithMessage("Trạng thái gói tập không hợp lệ. Chỉ chấp nhận ACTIVE hoặc INACTIVE.");
+        });
     }
 }

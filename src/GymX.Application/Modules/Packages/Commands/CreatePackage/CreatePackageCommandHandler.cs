@@ -48,7 +48,8 @@ public class CreatePackageCommandHandler(
             command.EffectiveEndDate,
             command.Description,
             packageCode,
-            categoryId: command.CategoryId);
+            categoryId: command.CategoryId,
+            status: command.Status);
 
         await packageRepository.AddAsync(package, cancellationToken);
 

@@ -53,10 +53,12 @@ public class Package : EntityAuditBase, ISoftDelete
         string? description = null,
         string? customCode = null,
         Guid? previousPackageId = null,
-        Guid? categoryId = null)
+        Guid? categoryId = null,
+        string? status = null)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var initialStatus = effectiveStartDate > today ? PackageStatus.Inactive : PackageStatus.Active;
+        var normalizedStatus = !string.IsNullOrWhiteSpace(status) && PackageStatus.IsValid(status)
+            ? status.Trim().ToUpperInvariant()
+            : PackageStatus.Active;
 
         return new Package
         {
@@ -68,7 +70,7 @@ public class Package : EntityAuditBase, ISoftDelete
             Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
             EffectiveStartDate = effectiveStartDate,
             EffectiveEndDate = effectiveEndDate,
-            Status = initialStatus,
+            Status = normalizedStatus,
             PreviousPackageId = previousPackageId,
             CategoryId = categoryId
         };
@@ -89,8 +91,6 @@ public class Package : EntityAuditBase, ISoftDelete
         string? description = null,
         Guid? categoryId = null)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
         Name = name.Trim();
         Price = price;
         DurationMonths = durationMonths;
@@ -100,11 +100,7 @@ public class Package : EntityAuditBase, ISoftDelete
         EffectiveEndDate = effectiveEndDate;
         CategoryId = categoryId;
 
-        if (effectiveStartDate > today)
-        {
-            Status = PackageStatus.Inactive;
-        }
-        else if (!string.IsNullOrWhiteSpace(status) && PackageStatus.IsValid(status))
+        if (!string.IsNullOrWhiteSpace(status) && PackageStatus.IsValid(status))
         {
             Status = status.Trim().ToUpperInvariant();
         }

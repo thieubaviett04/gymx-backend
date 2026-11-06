@@ -45,8 +45,10 @@ public class PackageRepository(ApplicationDbContext context)
         Guid? categoryId,
         int pageIndex,
         int pageSize,
+        bool enforceEffectiveDates = false,
         CancellationToken cancellationToken = default)
     {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var query = DbSet.AsNoTracking().Where(p => !p.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -60,6 +62,13 @@ public class PackageRepository(ApplicationDbContext context)
         if (categoryId.HasValue)
         {
             query = query.Where(p => p.CategoryId == categoryId.Value);
+        }
+
+        if (enforceEffectiveDates)
+        {
+            query = query.Where(p =>
+                p.EffectiveStartDate <= today &&
+                (!p.EffectiveEndDate.HasValue || p.EffectiveEndDate.Value >= today));
         }
 
         if (!string.IsNullOrWhiteSpace(durationFilter))
@@ -88,7 +97,6 @@ public class PackageRepository(ApplicationDbContext context)
         };
 
         var totalCount = await query.LongCountAsync(cancellationToken);
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
         var safePageIndex = Math.Max(1, pageIndex);
         var safePageSize = Math.Max(1, pageSize);

@@ -142,7 +142,7 @@ public class PackagesController(ISender sender) : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var result = await sender.Send(
-            new GetPackagesQuery(search, durationFilter, PackageStatus.Active, sortBy, categoryId, pageIndex, pageSize),
+            new GetPackagesQuery(search, durationFilter, PackageStatus.Active, sortBy, categoryId, pageIndex, pageSize, EnforceEffectiveDates: true),
             cancellationToken);
 
         if (result.IsSuccess)

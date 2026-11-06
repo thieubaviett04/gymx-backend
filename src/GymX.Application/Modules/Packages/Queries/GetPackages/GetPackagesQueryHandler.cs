@@ -21,6 +21,7 @@ public class GetPackagesQueryHandler(IPackageRepository packageRepository)
             request.CategoryId,
             pageIndex,
             pageSize,
+            request.EnforceEffectiveDates,
             cancellationToken);
 
         return Result.Success(result);
