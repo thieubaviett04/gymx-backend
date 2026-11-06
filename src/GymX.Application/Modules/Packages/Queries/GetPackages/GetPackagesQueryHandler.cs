@@ -18,8 +18,10 @@ public class GetPackagesQueryHandler(IPackageRepository packageRepository)
             request.DurationFilter,
             request.Status,
             request.SortBy,
+            request.CategoryId,
             pageIndex,
             pageSize,
+            request.EnforceEffectiveDates,
             cancellationToken);
 
         return Result.Success(result);

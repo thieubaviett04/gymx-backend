@@ -24,12 +24,13 @@ public class PackagesController(ISender sender) : ControllerBase
         [FromQuery] string? durationFilter,
         [FromQuery] string? status,
         [FromQuery] string? sortBy,
+        [FromQuery] Guid? categoryId,
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
         var result = await sender.Send(
-            new GetPackagesQuery(search, durationFilter, status, sortBy, pageIndex, pageSize),
+            new GetPackagesQuery(search, durationFilter, status, sortBy, categoryId, pageIndex, pageSize),
             cancellationToken);
 
         if (result.IsSuccess)
@@ -89,7 +90,7 @@ public class PackagesController(ISender sender) : ControllerBase
         return result.Error.Code switch
         {
             "Package.NotFound" => NotFound(new { error = result.Error }),
-            "Package.InUse" => Conflict(new { error = result.Error, canDiscontinueAndCreate = true }),
+            "PackageCategory.NotFound" => NotFound(new { error = result.Error }),
             _ => BadRequest(new { error = result.Error })
         };
     }
@@ -107,7 +108,7 @@ public class PackagesController(ISender sender) : ControllerBase
         return result.Error.Code switch
         {
             "Package.NotFound" => NotFound(new { error = result.Error }),
-            "Package.CannotDeleteInUse" => Conflict(new { error = result.Error, canDiscontinue = true }),
+            "Package.CannotDeleteInUse" => Conflict(new { error = result.Error }),
             _ => BadRequest(new { error = result.Error })
         };
     }
@@ -135,12 +136,13 @@ public class PackagesController(ISender sender) : ControllerBase
         [FromQuery] string? search,
         [FromQuery] string? durationFilter,
         [FromQuery] string? sortBy,
+        [FromQuery] Guid? categoryId,
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
         var result = await sender.Send(
-            new GetPackagesQuery(search, durationFilter, PackageStatus.Active, sortBy, pageIndex, pageSize),
+            new GetPackagesQuery(search, durationFilter, PackageStatus.Active, sortBy, categoryId, pageIndex, pageSize, EnforceEffectiveDates: true),
             cancellationToken);
 
         if (result.IsSuccess)

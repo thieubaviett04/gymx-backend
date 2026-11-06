@@ -1,6 +1,5 @@
-﻿using GymX.Application.Common.Interfaces;
+using GymX.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore.Storage;
-
 
 namespace GymX.Infrastructure.Persistence
 {
@@ -8,9 +7,9 @@ namespace GymX.Infrastructure.Persistence
     {
         private IDbContextTransaction? currentTransaction;
 
-        public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            return await context.SaveChangesAsync(cancellationToken);
+            return context.SaveChangesAsync(cancellationToken);
         }
 
         public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
@@ -49,7 +48,6 @@ namespace GymX.Infrastructure.Persistence
                 await currentTransaction.DisposeAsync();
                 currentTransaction = null;
             }
-
         }
     }
 }

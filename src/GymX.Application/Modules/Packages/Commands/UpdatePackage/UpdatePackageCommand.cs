@@ -11,11 +11,9 @@ public record UpdatePackageCommand(
     decimal? Price,
     int DurationMonths,
     DateOnly EffectiveStartDate,
-    DateOnly? EffectiveEndDate,
     string? Status,
-    int? MaxCheckins,
     string? Description,
-    string? Mode = null) : IRequest<Result<PackageDetailDto>>
+    Guid? CategoryId = null) : IRequest<Result<PackageDetailDto>>
 {
     public static UpdatePackageCommand FromRequest(Guid packageId, UpdatePackageRequest req) => new(
         packageId,
@@ -23,9 +21,7 @@ public record UpdatePackageCommand(
         req.Price,
         req.DurationMonths,
         req.EffectiveStartDate,
-        req.EffectiveEndDate,
         req.Status?.Trim().ToUpperInvariant(),
-        req.MaxCheckins,
         string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim(),
-        req.Mode?.Trim().ToUpperInvariant());
+        req.CategoryId);
 }

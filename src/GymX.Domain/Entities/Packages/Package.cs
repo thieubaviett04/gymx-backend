@@ -12,11 +12,12 @@ public class Package : EntityAuditBase, ISoftDelete
     public decimal Price { get; private set; }
     public int DurationMonths { get; private set; }
     public int DurationDays { get; private set; }
-    public int? MaxCheckins { get; private set; }
     public string? Description { get; private set; }
     public string Status { get; private set; } = PackageStatus.Active;
     public DateOnly EffectiveStartDate { get; private set; }
-    public DateOnly? EffectiveEndDate { get; private set; }
+
+    public Guid? CategoryId { get; private set; }
+    public virtual PackageCategory? Category { get; private set; }
 
     public Guid? PreviousPackageId { get; private set; }
     public virtual Package? PreviousPackage { get; private set; }
@@ -47,14 +48,15 @@ public class Package : EntityAuditBase, ISoftDelete
         decimal price,
         int durationMonths,
         DateOnly effectiveStartDate,
-        DateOnly? effectiveEndDate = null,
-        int? maxCheckins = null,
         string? description = null,
         string? customCode = null,
-        Guid? previousPackageId = null)
+        Guid? previousPackageId = null,
+        Guid? categoryId = null,
+        string? status = null)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var initialStatus = effectiveStartDate > today ? PackageStatus.Inactive : PackageStatus.Active;
+        var normalizedStatus = !string.IsNullOrWhiteSpace(status) && PackageStatus.IsValid(status)
+            ? status.Trim().ToUpperInvariant()
+            : PackageStatus.Active;
 
         return new Package
         {
@@ -63,12 +65,11 @@ public class Package : EntityAuditBase, ISoftDelete
             Price = price,
             DurationMonths = durationMonths,
             DurationDays = durationMonths * 30,
-            MaxCheckins = maxCheckins,
             Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
             EffectiveStartDate = effectiveStartDate,
-            EffectiveEndDate = effectiveEndDate,
-            Status = initialStatus,
-            PreviousPackageId = previousPackageId
+            Status = normalizedStatus,
+            PreviousPackageId = previousPackageId,
+            CategoryId = categoryId
         };
     }
 
@@ -82,27 +83,19 @@ public class Package : EntityAuditBase, ISoftDelete
         decimal price,
         int durationMonths,
         DateOnly effectiveStartDate,
-        DateOnly? effectiveEndDate,
         string? status,
-        int? maxCheckins = null,
-        string? description = null)
+        string? description = null,
+        Guid? categoryId = null)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
         Name = name.Trim();
         Price = price;
         DurationMonths = durationMonths;
         DurationDays = durationMonths * 30;
-        MaxCheckins = maxCheckins;
         Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
         EffectiveStartDate = effectiveStartDate;
-        EffectiveEndDate = effectiveEndDate;
+        CategoryId = categoryId;
 
-        if (effectiveStartDate > today)
-        {
-            Status = PackageStatus.Inactive;
-        }
-        else if (!string.IsNullOrWhiteSpace(status) && PackageStatus.IsValid(status))
+        if (!string.IsNullOrWhiteSpace(status) && PackageStatus.IsValid(status))
         {
             Status = status.Trim().ToUpperInvariant();
         }
@@ -118,10 +111,9 @@ public class Package : EntityAuditBase, ISoftDelete
         Status = PackageStatus.Active;
     }
 
-    public void Discontinue(DateOnly? endDate = null)
+    public void Discontinue()
     {
         Status = PackageStatus.Discontinued;
-        EffectiveEndDate = endDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
     }
 
     public void SoftDelete()

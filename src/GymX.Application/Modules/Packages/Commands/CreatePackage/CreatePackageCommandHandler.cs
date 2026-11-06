@@ -1,3 +1,4 @@
+using GymX.Application.Common.Exceptions;
 using GymX.Application.Common.Interfaces;
 using GymX.Application.Common.Interfaces.Repositories;
 using GymX.Application.Modules.Packages.DTOs.Response;
@@ -9,6 +10,7 @@ namespace GymX.Application.Modules.Packages.Commands.CreatePackage;
 
 public class CreatePackageCommandHandler(
     IPackageRepository packageRepository,
+    IPackageCategoryRepository packageCategoryRepository,
     IUnitOfWork unitOfWork)
     : IRequestHandler<CreatePackageCommand, Result<PackageDetailDto>>
 {
@@ -16,6 +18,22 @@ public class CreatePackageCommandHandler(
 
     public async Task<Result<PackageDetailDto>> Handle(CreatePackageCommand command, CancellationToken cancellationToken)
     {
+        string? categoryCode = null;
+        string? categoryName = null;
+
+        if (command.CategoryId.HasValue)
+        {
+            var category = await packageCategoryRepository.GetByIdAsync(command.CategoryId.Value, cancellationToken);
+            if (category is null || category.IsDeleted)
+            {
+                return Result.Failure<PackageDetailDto>(
+                    Error.NotFound("PackageCategory.NotFound", "Không tìm thấy loại hình gói tập đã chọn."));
+            }
+
+            categoryCode = category.Code;
+            categoryName = category.Name;
+        }
+
         string packageCode;
         do
         {
@@ -27,61 +45,51 @@ public class CreatePackageCommandHandler(
             command.Price!.Value,
             command.DurationMonths,
             command.EffectiveStartDate,
-            command.EffectiveEndDate,
-            command.MaxCheckins,
             command.Description,
-            packageCode);
+            packageCode,
+            categoryId: command.CategoryId,
+            status: command.Status);
 
         await packageRepository.AddAsync(package, cancellationToken);
 
-        var saveSucceeded = false;
         for (var attempt = 1; attempt <= MaxSaveRetries; attempt++)
         {
             try
             {
                 await unitOfWork.SaveChangesAsync(cancellationToken);
-                saveSucceeded = true;
-                break;
+
+                var resultDto = new PackageDetailDto
+                {
+                    Id = package.Id,
+                    PackageCode = package.PackageCode,
+                    Name = package.Name,
+                    Price = package.Price,
+                    DurationMonths = package.DurationMonths,
+                    DurationDays = package.DurationDays,
+                    Description = package.Description,
+                    Status = package.Status,
+                    EffectiveStartDate = package.EffectiveStartDate,
+                    CategoryId = package.CategoryId,
+                    CategoryCode = categoryCode,
+                    CategoryName = categoryName,
+                    PreviousPackageId = null,
+                    PreviousPackageCode = null,
+                    ActiveMembersCount = 0,
+                    CreatedDate = package.CreatedDate
+                };
+
+                return Result.Success(resultDto);
             }
-            catch (Exception ex) when (IsUniqueConstraintViolation(ex) && attempt < MaxSaveRetries)
+            catch (UniqueConstraintException)
             {
-                package.RegenerateCode(Package.GenerateRandomCode());
+                if (attempt < MaxSaveRetries)
+                {
+                    package.RegenerateCode(Package.GenerateRandomCode());
+                }
             }
         }
 
-        if (!saveSucceeded)
-        {
-            return Result.Failure<PackageDetailDto>(
-                Error.Conflict("Package.CodeCollision", "Không thể sinh mã gói tập duy nhất. Vui lòng thử lại."));
-        }
-
-        var resultDto = new PackageDetailDto
-        {
-            Id = package.Id,
-            PackageCode = package.PackageCode,
-            Name = package.Name,
-            Price = package.Price,
-            DurationMonths = package.DurationMonths,
-            DurationDays = package.DurationDays,
-            MaxCheckins = package.MaxCheckins,
-            Description = package.Description,
-            Status = package.Status,
-            EffectiveStartDate = package.EffectiveStartDate,
-            EffectiveEndDate = package.EffectiveEndDate,
-            PreviousPackageId = null,
-            PreviousPackageCode = null,
-            ActiveMembersCount = 0,
-            CreatedDate = package.CreatedDate
-        };
-
-        return Result.Success(resultDto);
-    }
-
-    private static bool IsUniqueConstraintViolation(Exception ex)
-    {
-        var text = ex.ToString();
-        return text.Contains("23505") ||
-               text.Contains("duplicate key", StringComparison.OrdinalIgnoreCase) ||
-               text.Contains("unique constraint", StringComparison.OrdinalIgnoreCase);
+        return Result.Failure<PackageDetailDto>(
+            Error.Conflict("Package.CodeCollision", "Không thể sinh mã gói tập duy nhất. Vui lòng thử lại."));
     }
 }

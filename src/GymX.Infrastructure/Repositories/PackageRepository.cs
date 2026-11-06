@@ -17,20 +17,23 @@ public class PackageRepository(ApplicationDbContext context)
     public Task<bool> ExistsCodeAsync(string packageCode, CancellationToken cancellationToken = default)
         => DbSet.AnyAsync(p => p.PackageCode == packageCode && !p.IsDeleted, cancellationToken);
 
-    public async Task<bool> IsPackageInUseAsync(Guid packageId, CancellationToken cancellationToken = default)
+    public Task<bool> IsPackageInUseAsync(Guid packageId, CancellationToken cancellationToken = default)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        return await Context.MemberPackages.AnyAsync(mp =>
+        return Context.MemberPackages.AnyAsync(mp =>
             mp.PackageId == packageId &&
             mp.Status == MemberPackageStatus.Active &&
             mp.EndDate >= today,
             cancellationToken);
     }
 
-    public async Task<int> CountActiveMembersAsync(Guid packageId, CancellationToken cancellationToken = default)
+    public Task<bool> HasEverBeenPurchasedAsync(Guid packageId, CancellationToken cancellationToken = default)
+        => Context.MemberPackages.AnyAsync(mp => mp.PackageId == packageId, cancellationToken);
+
+    public Task<int> CountActiveMembersAsync(Guid packageId, CancellationToken cancellationToken = default)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        return await Context.MemberPackages.CountAsync(mp =>
+        return Context.MemberPackages.CountAsync(mp =>
             mp.PackageId == packageId &&
             mp.Status == MemberPackageStatus.Active &&
             mp.EndDate >= today,
@@ -42,10 +45,13 @@ public class PackageRepository(ApplicationDbContext context)
         string? durationFilter,
         string? status,
         string? sortBy,
+        Guid? categoryId,
         int pageIndex,
         int pageSize,
+        bool enforceEffectiveDates = false,
         CancellationToken cancellationToken = default)
     {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var query = DbSet.AsNoTracking().Where(p => !p.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -54,6 +60,16 @@ public class PackageRepository(ApplicationDbContext context)
             query = query.Where(p =>
                 EF.Functions.ILike(p.PackageCode, $"%{keyword}%") ||
                 EF.Functions.ILike(p.Name, $"%{keyword}%"));
+        }
+
+        if (categoryId.HasValue)
+        {
+            query = query.Where(p => p.CategoryId == categoryId.Value);
+        }
+
+        if (enforceEffectiveDates)
+        {
+            query = query.Where(p => p.EffectiveStartDate <= today);
         }
 
         if (!string.IsNullOrWhiteSpace(durationFilter))
@@ -82,11 +98,13 @@ public class PackageRepository(ApplicationDbContext context)
         };
 
         var totalCount = await query.LongCountAsync(cancellationToken);
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var safePageIndex = Math.Max(1, pageIndex);
+        var safePageSize = Math.Max(1, pageSize);
 
         var items = await query
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
+            .Skip((safePageIndex - 1) * safePageSize)
+            .Take(safePageSize)
             .Select(p => new PackageSummaryDto
             {
                 Id = p.Id,
@@ -95,11 +113,12 @@ public class PackageRepository(ApplicationDbContext context)
                 Price = p.Price,
                 DurationMonths = p.DurationMonths,
                 DurationDays = p.DurationDays,
-                MaxCheckins = p.MaxCheckins,
                 Description = p.Description,
                 Status = p.Status,
                 EffectiveStartDate = p.EffectiveStartDate,
-                EffectiveEndDate = p.EffectiveEndDate,
+                CategoryId = p.CategoryId,
+                CategoryCode = p.Category != null ? p.Category.Code : null,
+                CategoryName = p.Category != null ? p.Category.Name : null,
                 PreviousPackageId = p.PreviousPackageId,
                 PreviousPackageCode = p.PreviousPackage != null ? p.PreviousPackage.PackageCode : null,
                 ActiveMembersCount = Context.MemberPackages.Count(mp =>
@@ -110,13 +129,14 @@ public class PackageRepository(ApplicationDbContext context)
             })
             .ToListAsync(cancellationToken);
 
-        return new PagedResult<PackageSummaryDto>(items, totalCount, pageIndex, pageSize);
+        return new PagedResult<PackageSummaryDto>(items, totalCount, safePageIndex, safePageSize);
     }
 
     public async Task<PackageDetailDto?> GetPackageDetailByIdAsync(Guid packageId, CancellationToken cancellationToken = default)
     {
         var package = await DbSet.AsNoTracking()
             .Include(p => p.PreviousPackage)
+            .Include(p => p.Category)
             .FirstOrDefaultAsync(p => p.Id == packageId && !p.IsDeleted, cancellationToken);
 
         if (package is null) return null;
@@ -136,11 +156,12 @@ public class PackageRepository(ApplicationDbContext context)
             Price = package.Price,
             DurationMonths = package.DurationMonths,
             DurationDays = package.DurationDays,
-            MaxCheckins = package.MaxCheckins,
             Description = package.Description,
             Status = package.Status,
             EffectiveStartDate = package.EffectiveStartDate,
-            EffectiveEndDate = package.EffectiveEndDate,
+            CategoryId = package.CategoryId,
+            CategoryCode = package.Category?.Code,
+            CategoryName = package.Category?.Name,
             PreviousPackageId = package.PreviousPackageId,
             PreviousPackageCode = package.PreviousPackage?.PackageCode,
             ActiveMembersCount = activeCount,

@@ -19,15 +19,13 @@ public class DeletePackageCommandHandler(
                 Error.NotFound("Package.NotFound", "Không tìm thấy thông tin gói tập."));
         }
 
-        // Kiểm tra xem có người đang sử dụng không (Luồng A-2)
         var isBeingUsed = await packageRepository.IsPackageInUseAsync(package.Id, cancellationToken);
         if (isBeingUsed)
         {
             return Result.Failure<bool>(
-                Error.Conflict("Package.CannotDeleteInUse", "Không thể xóa do đang có người sử dụng, bạn có muốn cập nhật trạng thái 'Ngừng kinh doanh' cho gói tập này không?"));
+                Error.Conflict("Package.CannotDeleteInUse", "Gói tập này hiện đang có hội viên sử dụng, không thể xóa."));
         }
 
-        // Không có ai dùng: Thực hiện xóa mềm
         package.SoftDelete();
         packageRepository.Update(package);
         await unitOfWork.SaveChangesAsync(cancellationToken);

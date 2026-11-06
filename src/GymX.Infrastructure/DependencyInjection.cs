@@ -30,6 +30,7 @@ namespace GymX.Infrastructure
             services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
             services.AddScoped<AuditableEntityInterceptor>();
             services.AddScoped<SoftDeleteInterceptor>();
+            services.AddScoped<UniqueConstraintInterceptor>();
             services.AddDbContext<ApplicationDbContext>((sp, options) =>
             {
                 var connectionString = configuration.GetConnectionString("DefaultConnection")
@@ -54,6 +55,7 @@ namespace GymX.Infrastructure
             services.AddScoped<IMemberRepository, MemberRepository>();
             services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             services.AddScoped<ITrainerRepository, TrainerRepository>();
+            services.AddScoped<IPackageCategoryRepository, PackageCategoryRepository>();
             services.AddScoped<IPackageRepository, PackageRepository>();
             services.AddScoped<IPenaltyRuleRepository, PenaltyRuleRepository>();
             services.AddScoped<IViolationRepository, ViolationRepository>();
