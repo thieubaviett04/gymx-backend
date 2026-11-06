@@ -21,9 +21,6 @@ public static class ApplicationDbContextSeed
             await IdentitySeeder.SeedAsync(context);
             logger.LogInformation("- Đã seed xong Identity (Roles, Admin User).");
 
-            await PackageSeeder.SeedAsync(context);
-            logger.LogInformation("- Đã seed xong Membership Packages.");
-
             logger.LogInformation("Quá trình Seed dữ liệu hoàn tất!");
         }
         catch (Exception ex)
