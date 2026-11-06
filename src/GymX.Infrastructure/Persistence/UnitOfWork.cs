@@ -1,6 +1,8 @@
-﻿using GymX.Application.Common.Interfaces;
+using GymX.Application.Common.Exceptions;
+using GymX.Application.Common.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-
+using Npgsql;
 
 namespace GymX.Infrastructure.Persistence
 {
@@ -10,7 +12,15 @@ namespace GymX.Infrastructure.Persistence
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            return await context.SaveChangesAsync(cancellationToken);
+            try
+            {
+                return await context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException exception) when (exception.InnerException is PostgresException postgresException &&
+                                                     postgresException.SqlState == PostgresErrorCodes.UniqueViolation)
+            {
+                throw new UniqueConstraintException("A unique constraint violation occurred while saving changes.", exception);
+            }
         }
 
         public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
@@ -49,7 +59,6 @@ namespace GymX.Infrastructure.Persistence
                 await currentTransaction.DisposeAsync();
                 currentTransaction = null;
             }
-
         }
     }
 }

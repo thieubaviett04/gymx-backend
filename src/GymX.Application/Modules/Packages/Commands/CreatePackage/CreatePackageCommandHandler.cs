@@ -1,11 +1,10 @@
+using GymX.Application.Common.Exceptions;
 using GymX.Application.Common.Interfaces;
 using GymX.Application.Common.Interfaces.Repositories;
 using GymX.Application.Modules.Packages.DTOs.Response;
 using GymX.Domain.Common.Models;
 using GymX.Domain.Entities.Packages;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace GymX.Application.Modules.Packages.Commands.CreatePackage;
 
@@ -44,7 +43,7 @@ public class CreatePackageCommandHandler(
                 saveSucceeded = true;
                 break;
             }
-            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex) && attempt < MaxSaveRetries)
+            catch (UniqueConstraintException) when (attempt < MaxSaveRetries)
             {
                 package.RegenerateCode(Package.GenerateRandomCode());
             }
@@ -76,7 +75,4 @@ public class CreatePackageCommandHandler(
 
         return Result.Success(resultDto);
     }
-
-    private static bool IsUniqueConstraintViolation(DbUpdateException ex) =>
-        ex.InnerException is PostgresException pgEx && pgEx.SqlState == PostgresErrorCodes.UniqueViolation;
 }
