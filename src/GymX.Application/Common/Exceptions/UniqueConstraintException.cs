@@ -6,3 +6,4 @@ public class UniqueConstraintException : ApplicationException
 
     public UniqueConstraintException(string message, Exception innerException) : base(message, innerException) { }
 }
+

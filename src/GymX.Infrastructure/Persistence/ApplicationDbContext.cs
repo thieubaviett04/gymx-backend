@@ -17,7 +17,8 @@ namespace GymX.Infrastructure.Persistence
     public class ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
         AuditableEntityInterceptor auditableEntityInterceptor,
-        SoftDeleteInterceptor softDeleteInterceptor) : DbContext(options), IApplicationDbContext
+        SoftDeleteInterceptor softDeleteInterceptor,
+        UniqueConstraintInterceptor uniqueConstraintInterceptor) : DbContext(options), IApplicationDbContext
     {
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -26,7 +27,7 @@ namespace GymX.Infrastructure.Persistence
         }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.AddInterceptors(auditableEntityInterceptor, softDeleteInterceptor);
+            optionsBuilder.AddInterceptors(auditableEntityInterceptor, softDeleteInterceptor, uniqueConstraintInterceptor);
             base.OnConfiguring(optionsBuilder);
         }
 

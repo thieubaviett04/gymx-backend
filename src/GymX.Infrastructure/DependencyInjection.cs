@@ -30,6 +30,7 @@ namespace GymX.Infrastructure
             services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
             services.AddScoped<AuditableEntityInterceptor>();
             services.AddScoped<SoftDeleteInterceptor>();
+            services.AddScoped<UniqueConstraintInterceptor>();
             services.AddDbContext<ApplicationDbContext>((sp, options) =>
             {
                 var connectionString = configuration.GetConnectionString("DefaultConnection")
