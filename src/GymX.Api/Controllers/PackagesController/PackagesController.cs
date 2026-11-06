@@ -90,6 +90,7 @@ public class PackagesController(ISender sender) : ControllerBase
         return result.Error.Code switch
         {
             "Package.NotFound" => NotFound(new { error = result.Error }),
+            "Package.CannotModifyDiscontinued" => Conflict(new { error = result.Error }),
             "Package.CannotModifyPriceOrDuration" => Conflict(new { error = result.Error }),
             "Package.InUse" => Conflict(new { error = result.Error }),
             _ => BadRequest(new { error = result.Error })

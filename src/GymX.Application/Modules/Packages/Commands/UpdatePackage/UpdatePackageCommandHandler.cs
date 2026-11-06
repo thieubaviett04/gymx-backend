@@ -23,6 +23,12 @@ public class UpdatePackageCommandHandler(
                 Error.NotFound("Package.NotFound", "Không tìm thấy thông tin gói tập."));
         }
 
+        if (package.Status == PackageStatus.Discontinued)
+        {
+            return Result.Failure<PackageDetailDto>(
+                Error.Conflict("Package.CannotModifyDiscontinued", "Không thể chỉnh sửa gói tập đã ngừng kinh doanh để đảm bảo tính toàn vẹn của dữ liệu lịch sử và hợp đồng hội viên."));
+        }
+
         string? categoryCode = null;
         string? categoryName = null;
         var targetCategoryId = command.CategoryId ?? package.CategoryId;
@@ -50,12 +56,8 @@ public class UpdatePackageCommandHandler(
 
             if (isAttemptingPriceOrDurationChange)
             {
-                var message = package.Status == PackageStatus.Discontinued
-                    ? "Gói tập này đã ngừng kinh doanh và đang có hội viên sử dụng thẻ, không thể sửa đổi giá hoặc thời hạn."
-                    : "Gói tập này đang có hội viên sử dụng thẻ, không thể sửa đổi giá hoặc thời hạn. Vui lòng tạo gói tập mới nếu bạn muốn thay đổi chính sách giá.";
-
                 return Result.Failure<PackageDetailDto>(
-                    Error.Conflict("Package.CannotModifyPriceOrDuration", message));
+                    Error.Conflict("Package.CannotModifyPriceOrDuration", "Gói tập này đang có hội viên sử dụng thẻ, không thể sửa đổi giá hoặc thời hạn. Vui lòng tạo gói tập mới nếu bạn muốn thay đổi chính sách giá."));
             }
         }
 
