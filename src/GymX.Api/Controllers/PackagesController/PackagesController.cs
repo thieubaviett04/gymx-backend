@@ -90,7 +90,11 @@ public class PackagesController(ISender sender) : ControllerBase
         return result.Error.Code switch
         {
             "Package.NotFound" => NotFound(new { error = result.Error }),
-            "Package.InUse" => Conflict(new { error = result.Error, canDiscontinueAndCreate = true }),
+            "Package.InUse" => Conflict(new
+            {
+                error = result.Error,
+                canDiscontinueAndCreate = !result.Error.Description.Contains("đã ngừng kinh doanh")
+            }),
             _ => BadRequest(new { error = result.Error })
         };
     }
@@ -108,7 +112,7 @@ public class PackagesController(ISender sender) : ControllerBase
         return result.Error.Code switch
         {
             "Package.NotFound" => NotFound(new { error = result.Error }),
-            "Package.CannotDeleteInUse" => Conflict(new { error = result.Error, canDiscontinue = true }),
+            "Package.CannotDeleteInUse" => Conflict(new { error = result.Error }),
             _ => BadRequest(new { error = result.Error })
         };
     }
