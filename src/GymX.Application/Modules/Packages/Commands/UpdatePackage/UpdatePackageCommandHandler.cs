@@ -23,15 +23,15 @@ public class UpdatePackageCommandHandler(
                 Error.NotFound("Package.NotFound", "Không tìm thấy thông tin gói tập."));
         }
 
-        if (package.Status == PackageStatus.Discontinued)
-        {
-            return Result.Failure<PackageDetailDto>(
-                Error.Conflict("Package.CannotModifyDiscontinued", "Không thể chỉnh sửa gói tập đã ngừng kinh doanh để đảm bảo tính toàn vẹn của dữ liệu lịch sử và hợp đồng hội viên."));
-        }
-
         var hasEverBeenPurchased = await packageRepository.HasEverBeenPurchasedAsync(package.Id, cancellationToken);
         if (hasEverBeenPurchased)
         {
+            if (package.Status == PackageStatus.Discontinued)
+            {
+                return Result.Failure<PackageDetailDto>(
+                    Error.Conflict("Package.CannotModifyDiscontinued", "Không thể chỉnh sửa gói tập đã ngừng kinh doanh để đảm bảo tính toàn vẹn của dữ liệu lịch sử và hợp đồng hội viên."));
+            }
+
             var isAttemptingPriceOrDurationChange =
                 (command.Price.HasValue && command.Price.Value != package.Price) ||
                 (command.DurationMonths != package.DurationMonths);
