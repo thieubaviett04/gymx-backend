@@ -23,10 +23,25 @@ public class UpdatePackageCommandHandler(
                 Error.NotFound("Package.NotFound", "Không tìm thấy thông tin gói tập."));
         }
 
-        if (package.Status == PackageStatus.Discontinued)
+        var hasEverBeenPurchased = await packageRepository.HasEverBeenPurchasedAsync(package.Id, cancellationToken);
+
+        if (hasEverBeenPurchased)
         {
-            return Result.Failure<PackageDetailDto>(
-                Error.Conflict("Package.CannotModifyDiscontinued", "Không thể chỉnh sửa gói tập đã ngừng kinh doanh để đảm bảo tính toàn vẹn của dữ liệu lịch sử và hợp đồng hội viên."));
+            if (package.Status == PackageStatus.Discontinued)
+            {
+                return Result.Failure<PackageDetailDto>(
+                    Error.Conflict("Package.CannotModifyDiscontinued", "Không thể chỉnh sửa gói tập đã ngừng kinh doanh để đảm bảo tính toàn vẹn của dữ liệu lịch sử và hợp đồng hội viên."));
+            }
+
+            var isAttemptingPriceOrDurationChange =
+                (command.Price.HasValue && command.Price.Value != package.Price) ||
+                (command.DurationMonths != package.DurationMonths);
+
+            if (isAttemptingPriceOrDurationChange)
+            {
+                return Result.Failure<PackageDetailDto>(
+                    Error.Conflict("Package.CannotModifyPriceOrDuration", "Gói tập này đã phát sinh dữ liệu đăng ký của hội viên, không thể sửa đổi giá hoặc thời hạn. Vui lòng tạo gói tập mới nếu bạn muốn thay đổi chính sách giá."));
+            }
         }
 
         string? categoryCode = null;
@@ -46,24 +61,9 @@ public class UpdatePackageCommandHandler(
             categoryName = category.Name;
         }
 
-        var isBeingUsed = await packageRepository.IsPackageInUseAsync(package.Id, cancellationToken);
-
-        if (isBeingUsed)
-        {
-            var isAttemptingPriceOrDurationChange =
-                (command.Price.HasValue && command.Price.Value != package.Price) ||
-                (command.DurationMonths != package.DurationMonths);
-
-            if (isAttemptingPriceOrDurationChange)
-            {
-                return Result.Failure<PackageDetailDto>(
-                    Error.Conflict("Package.CannotModifyPriceOrDuration", "Gói tập này đang có hội viên sử dụng thẻ, không thể sửa đổi giá hoặc thời hạn. Vui lòng tạo gói tập mới nếu bạn muốn thay đổi chính sách giá."));
-            }
-        }
-
         package.UpdateInfo(
             command.Name,
-            command.Price!.Value,
+            command.Price ?? package.Price,
             command.DurationMonths,
             command.EffectiveStartDate,
             command.Status,

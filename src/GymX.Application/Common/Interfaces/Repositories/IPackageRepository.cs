@@ -9,6 +9,7 @@ public interface IPackageRepository : IGenericRepository<Package>
     Task<Package?> GetByCodeAsync(string packageCode, CancellationToken cancellationToken = default);
     Task<bool> ExistsCodeAsync(string packageCode, CancellationToken cancellationToken = default);
     Task<bool> IsPackageInUseAsync(Guid packageId, CancellationToken cancellationToken = default);
+    Task<bool> HasEverBeenPurchasedAsync(Guid packageId, CancellationToken cancellationToken = default);
     Task<int> CountActiveMembersAsync(Guid packageId, CancellationToken cancellationToken = default);
     Task<PagedResult<PackageSummaryDto>> GetPackagesPagedAsync(
         string? search,

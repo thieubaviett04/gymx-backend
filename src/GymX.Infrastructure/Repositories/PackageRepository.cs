@@ -27,6 +27,9 @@ public class PackageRepository(ApplicationDbContext context)
             cancellationToken);
     }
 
+    public Task<bool> HasEverBeenPurchasedAsync(Guid packageId, CancellationToken cancellationToken = default)
+        => Context.MemberPackages.AnyAsync(mp => mp.PackageId == packageId, cancellationToken);
+
     public Task<int> CountActiveMembersAsync(Guid packageId, CancellationToken cancellationToken = default)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);

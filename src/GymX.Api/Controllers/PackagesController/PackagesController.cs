@@ -111,6 +111,7 @@ public class PackagesController(ISender sender) : ControllerBase
         {
             "Package.NotFound" => NotFound(new { error = result.Error }),
             "Package.CannotDeleteInUse" => Conflict(new { error = result.Error }),
+            "Package.CannotDeleteHistoricPackage" => Conflict(new { error = result.Error }),
             _ => BadRequest(new { error = result.Error })
         };
     }

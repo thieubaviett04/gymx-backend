@@ -20,15 +20,22 @@ public class DeletePackageCommandHandler(
                 Error.NotFound("Package.NotFound", "Không tìm thấy thông tin gói tập."));
         }
 
-        var isBeingUsed = await packageRepository.IsPackageInUseAsync(package.Id, cancellationToken);
-        if (isBeingUsed)
+        var hasEverBeenPurchased = await packageRepository.HasEverBeenPurchasedAsync(package.Id, cancellationToken);
+        if (hasEverBeenPurchased)
         {
-            var message = package.Status == PackageStatus.Discontinued
-                ? "Gói tập này đã ngừng kinh doanh nhưng hiện vẫn còn hội viên đang trong thời hạn sử dụng thẻ, không thể xóa để bảo toàn dữ liệu lịch sử."
-                : "Không thể xóa do đang có người sử dụng, bạn có muốn cập nhật trạng thái 'Ngừng kinh doanh' cho gói tập này không?";
+            var isBeingUsed = await packageRepository.IsPackageInUseAsync(package.Id, cancellationToken);
+            if (isBeingUsed)
+            {
+                var message = package.Status == PackageStatus.Discontinued
+                    ? "Gói tập này đã ngừng kinh doanh nhưng hiện vẫn còn hội viên đang trong thời hạn sử dụng thẻ, không thể xóa để bảo toàn dữ liệu lịch sử."
+                    : "Không thể xóa do đang có người sử dụng, bạn có muốn cập nhật trạng thái 'Ngừng kinh doanh' cho gói tập này không?";
+
+                return Result.Failure<bool>(
+                    Error.Conflict("Package.CannotDeleteInUse", message));
+            }
 
             return Result.Failure<bool>(
-                Error.Conflict("Package.CannotDeleteInUse", message));
+                Error.Conflict("Package.CannotDeleteHistoricPackage", "Gói tập này đã phát sinh dữ liệu đăng ký của hội viên trong lịch sử, không thể xóa để bảo toàn dữ liệu đối soát và hợp đồng."));
         }
 
         package.SoftDelete();
