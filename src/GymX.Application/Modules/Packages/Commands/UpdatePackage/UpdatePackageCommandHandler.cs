@@ -53,28 +53,24 @@ public class UpdatePackageCommandHandler(
 
                 await packageRepository.AddAsync(newPackage, cancellationToken);
 
-                var saveSucceeded = false;
                 for (var attempt = 1; attempt <= MaxSaveRetries; attempt++)
                 {
                     try
                     {
                         await unitOfWork.SaveChangesAsync(cancellationToken);
-                        saveSucceeded = true;
-                        break;
+                        return Result.Success(await MapDetailAsync(newPackage, cancellationToken, previousCode: package.PackageCode));
                     }
-                    catch (UniqueConstraintException) when (attempt < MaxSaveRetries)
+                    catch (UniqueConstraintException)
                     {
-                        newPackage.RegenerateCode(Package.GenerateRandomCode());
+                        if (attempt < MaxSaveRetries)
+                        {
+                            newPackage.RegenerateCode(Package.GenerateRandomCode());
+                        }
                     }
                 }
 
-                if (!saveSucceeded)
-                {
-                    return Result.Failure<PackageDetailDto>(
-                        Error.Conflict("Package.CodeCollision", "Không thể sinh mã cho gói tập mới. Vui lòng thử lại."));
-                }
-
-                return Result.Success(await MapDetailAsync(newPackage, cancellationToken, previousCode: package.PackageCode));
+                return Result.Failure<PackageDetailDto>(
+                    Error.Conflict("Package.CodeCollision", "Không thể sinh mã cho gói tập mới. Vui lòng thử lại."));
             }
 
             return Result.Failure<PackageDetailDto>(

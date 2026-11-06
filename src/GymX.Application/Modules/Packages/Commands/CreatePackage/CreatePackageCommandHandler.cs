@@ -34,45 +34,42 @@ public class CreatePackageCommandHandler(
 
         await packageRepository.AddAsync(package, cancellationToken);
 
-        var saveSucceeded = false;
         for (var attempt = 1; attempt <= MaxSaveRetries; attempt++)
         {
             try
             {
                 await unitOfWork.SaveChangesAsync(cancellationToken);
-                saveSucceeded = true;
-                break;
+
+                var resultDto = new PackageDetailDto
+                {
+                    Id = package.Id,
+                    PackageCode = package.PackageCode,
+                    Name = package.Name,
+                    Price = package.Price,
+                    DurationMonths = package.DurationMonths,
+                    DurationDays = package.DurationDays,
+                    Description = package.Description,
+                    Status = package.Status,
+                    EffectiveStartDate = package.EffectiveStartDate,
+                    EffectiveEndDate = package.EffectiveEndDate,
+                    PreviousPackageId = null,
+                    PreviousPackageCode = null,
+                    ActiveMembersCount = 0,
+                    CreatedDate = package.CreatedDate
+                };
+
+                return Result.Success(resultDto);
             }
-            catch (UniqueConstraintException) when (attempt < MaxSaveRetries)
+            catch (UniqueConstraintException)
             {
-                package.RegenerateCode(Package.GenerateRandomCode());
+                if (attempt < MaxSaveRetries)
+                {
+                    package.RegenerateCode(Package.GenerateRandomCode());
+                }
             }
         }
 
-        if (!saveSucceeded)
-        {
-            return Result.Failure<PackageDetailDto>(
-                Error.Conflict("Package.CodeCollision", "Không thể sinh mã gói tập duy nhất. Vui lòng thử lại."));
-        }
-
-        var resultDto = new PackageDetailDto
-        {
-            Id = package.Id,
-            PackageCode = package.PackageCode,
-            Name = package.Name,
-            Price = package.Price,
-            DurationMonths = package.DurationMonths,
-            DurationDays = package.DurationDays,
-            Description = package.Description,
-            Status = package.Status,
-            EffectiveStartDate = package.EffectiveStartDate,
-            EffectiveEndDate = package.EffectiveEndDate,
-            PreviousPackageId = null,
-            PreviousPackageCode = null,
-            ActiveMembersCount = 0,
-            CreatedDate = package.CreatedDate
-        };
-
-        return Result.Success(resultDto);
+        return Result.Failure<PackageDetailDto>(
+            Error.Conflict("Package.CodeCollision", "Không thể sinh mã gói tập duy nhất. Vui lòng thử lại."));
     }
 }
