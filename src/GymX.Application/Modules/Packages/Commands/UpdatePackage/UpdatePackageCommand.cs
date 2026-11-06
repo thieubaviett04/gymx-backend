@@ -13,7 +13,6 @@ public record UpdatePackageCommand(
     DateOnly EffectiveStartDate,
     string? Status,
     string? Description,
-    string? Mode = null,
     Guid? CategoryId = null) : IRequest<Result<PackageDetailDto>>
 {
     public static UpdatePackageCommand FromRequest(Guid packageId, UpdatePackageRequest req) => new(
@@ -24,6 +23,5 @@ public record UpdatePackageCommand(
         req.EffectiveStartDate,
         req.Status?.Trim().ToUpperInvariant(),
         string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim(),
-        req.Mode?.Trim().ToUpperInvariant(),
         req.CategoryId);
 }

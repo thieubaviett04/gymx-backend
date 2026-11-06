@@ -2,9 +2,9 @@ namespace GymX.Domain.Constants;
 
 public static class PackageStatus
 {
-    public const string Inactive = "INACTIVE";         // Chưa hoạt động
-    public const string Active = "ACTIVE";             // Hoạt động
-    public const string Discontinued = "DISCONTINUED"; // Ngừng kinh doanh
+    public const string Inactive = "INACTIVE";
+    public const string Active = "ACTIVE";
+    public const string Discontinued = "DISCONTINUED";
 
     public static readonly string[] All = [Inactive, Active, Discontinued];
 

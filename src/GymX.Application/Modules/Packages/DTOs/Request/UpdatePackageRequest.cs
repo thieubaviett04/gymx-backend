@@ -9,5 +9,4 @@ public class UpdatePackageRequest
     public Guid? CategoryId { get; set; }
     public string? Status { get; set; }
     public DateOnly EffectiveStartDate { get; set; }
-    public string? Mode { get; set; }
 }
