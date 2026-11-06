@@ -18,3 +18,4 @@ public interface IPackageCategoryRepository : IGenericRepository<PackageCategory
         CancellationToken cancellationToken = default);
     Task<List<PackageCategoryLookupDto>> GetLookupAsync(CancellationToken cancellationToken = default);
 }
+

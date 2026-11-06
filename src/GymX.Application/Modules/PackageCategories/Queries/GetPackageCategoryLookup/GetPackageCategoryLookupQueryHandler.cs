@@ -16,3 +16,4 @@ public class GetPackageCategoryLookupQueryHandler(IPackageCategoryRepository pac
         return Result.Success(result);
     }
 }
+

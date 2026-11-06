@@ -11,3 +11,4 @@ public static class PackageCategoryStatus
         !string.IsNullOrWhiteSpace(status) &&
         All.Contains(status.Trim().ToUpperInvariant());
 }
+

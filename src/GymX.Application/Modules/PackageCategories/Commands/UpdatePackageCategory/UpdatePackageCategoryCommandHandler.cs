@@ -46,3 +46,4 @@ public class UpdatePackageCategoryCommandHandler(
         return Result.Success(dto);
     }
 }
+

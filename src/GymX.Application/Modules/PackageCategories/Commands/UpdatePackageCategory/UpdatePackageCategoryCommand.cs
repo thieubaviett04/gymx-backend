@@ -9,3 +9,4 @@ public record UpdatePackageCategoryCommand(
     string Name,
     string? Description,
     string Status) : IRequest<Result<PackageCategorySummaryDto>>;
+

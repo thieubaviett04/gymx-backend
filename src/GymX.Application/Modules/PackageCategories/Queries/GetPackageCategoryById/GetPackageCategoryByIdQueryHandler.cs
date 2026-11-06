@@ -34,3 +34,4 @@ public class GetPackageCategoryByIdQueryHandler(IPackageCategoryRepository packa
         return Result.Success(dto);
     }
 }
+

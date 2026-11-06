@@ -5,3 +5,4 @@ using MediatR;
 namespace GymX.Application.Modules.PackageCategories.Queries.GetPackageCategoryById;
 
 public record GetPackageCategoryByIdQuery(Guid Id) : IRequest<Result<PackageCategorySummaryDto>>;
+

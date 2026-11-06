@@ -19,3 +19,4 @@ public static class PackageCategoryErrors
     public static readonly Error InvalidStatus =
         Error.Validation("PackageCategory.InvalidStatus", "Trạng thái loại hình gói tập không hợp lệ. Chỉ chấp nhận ACTIVE hoặc INACTIVE.");
 }
+

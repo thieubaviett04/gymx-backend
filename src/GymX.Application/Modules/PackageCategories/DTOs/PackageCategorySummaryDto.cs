@@ -11,3 +11,4 @@ public class PackageCategorySummaryDto
     public DateTime CreatedDate { get; set; }
     public DateTime? LastModifiedDate { get; set; }
 }
+

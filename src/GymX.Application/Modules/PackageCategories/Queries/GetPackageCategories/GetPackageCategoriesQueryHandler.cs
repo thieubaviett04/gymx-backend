@@ -25,3 +25,4 @@ public class GetPackageCategoriesQueryHandler(IPackageCategoryRepository package
         return Result.Success(result);
     }
 }
+

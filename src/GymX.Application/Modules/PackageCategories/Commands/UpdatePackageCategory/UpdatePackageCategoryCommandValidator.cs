@@ -19,3 +19,4 @@ public class UpdatePackageCategoryCommandValidator : AbstractValidator<UpdatePac
             .Must(PackageCategoryStatus.IsValid).WithMessage("Trạng thái chỉ được là ACTIVE hoặc INACTIVE.");
     }
 }
+

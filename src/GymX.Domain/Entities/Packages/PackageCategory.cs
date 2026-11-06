@@ -56,3 +56,4 @@ public class PackageCategory : EntityAuditBase, ISoftDelete
         DeletedDate = DateTime.UtcNow;
     }
 }
+

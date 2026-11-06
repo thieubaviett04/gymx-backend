@@ -19,3 +19,4 @@ public class CreatePackageCategoryCommandValidator : AbstractValidator<CreatePac
             .MaximumLength(500).WithMessage("Mô tả loại hình gói tập tối đa 500 ký tự.");
     }
 }
+

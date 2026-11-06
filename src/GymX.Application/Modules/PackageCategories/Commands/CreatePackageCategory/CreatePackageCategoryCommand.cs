@@ -8,3 +8,4 @@ public record CreatePackageCategoryCommand(
     string Code,
     string Name,
     string? Description) : IRequest<Result<PackageCategorySummaryDto>>;
+

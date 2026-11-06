@@ -25,3 +25,4 @@ public class PackageCategoryConfiguration : IEntityTypeConfiguration<PackageCate
         builder.Property(c => c.Status).IsRequired().HasMaxLength(20);
     }
 }
+

@@ -123,3 +123,4 @@ public class PackageCategoriesController(ISender sender) : ControllerBase
         };
     }
 }
+

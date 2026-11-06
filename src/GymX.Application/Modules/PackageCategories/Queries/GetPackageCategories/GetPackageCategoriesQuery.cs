@@ -9,3 +9,4 @@ public record GetPackageCategoriesQuery(
     string? Status,
     int PageIndex = 1,
     int PageSize = 10) : IRequest<Result<PagedResult<PackageCategorySummaryDto>>>;
+
