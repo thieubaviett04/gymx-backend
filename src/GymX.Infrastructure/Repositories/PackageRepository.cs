@@ -42,6 +42,7 @@ public class PackageRepository(ApplicationDbContext context)
         string? durationFilter,
         string? status,
         string? sortBy,
+        Guid? categoryId,
         int pageIndex,
         int pageSize,
         CancellationToken cancellationToken = default)
@@ -54,6 +55,11 @@ public class PackageRepository(ApplicationDbContext context)
             query = query.Where(p =>
                 EF.Functions.ILike(p.PackageCode, $"%{keyword}%") ||
                 EF.Functions.ILike(p.Name, $"%{keyword}%"));
+        }
+
+        if (categoryId.HasValue)
+        {
+            query = query.Where(p => p.CategoryId == categoryId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(durationFilter))
@@ -102,6 +108,9 @@ public class PackageRepository(ApplicationDbContext context)
                 Status = p.Status,
                 EffectiveStartDate = p.EffectiveStartDate,
                 EffectiveEndDate = p.EffectiveEndDate,
+                CategoryId = p.CategoryId,
+                CategoryCode = p.Category != null ? p.Category.Code : null,
+                CategoryName = p.Category != null ? p.Category.Name : null,
                 PreviousPackageId = p.PreviousPackageId,
                 PreviousPackageCode = p.PreviousPackage != null ? p.PreviousPackage.PackageCode : null,
                 ActiveMembersCount = Context.MemberPackages.Count(mp =>
@@ -119,6 +128,7 @@ public class PackageRepository(ApplicationDbContext context)
     {
         var package = await DbSet.AsNoTracking()
             .Include(p => p.PreviousPackage)
+            .Include(p => p.Category)
             .FirstOrDefaultAsync(p => p.Id == packageId && !p.IsDeleted, cancellationToken);
 
         if (package is null) return null;
@@ -142,6 +152,9 @@ public class PackageRepository(ApplicationDbContext context)
             Status = package.Status,
             EffectiveStartDate = package.EffectiveStartDate,
             EffectiveEndDate = package.EffectiveEndDate,
+            CategoryId = package.CategoryId,
+            CategoryCode = package.Category?.Code,
+            CategoryName = package.Category?.Name,
             PreviousPackageId = package.PreviousPackageId,
             PreviousPackageCode = package.PreviousPackage?.PackageCode,
             ActiveMembersCount = activeCount,

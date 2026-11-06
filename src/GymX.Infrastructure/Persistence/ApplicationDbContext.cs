@@ -43,6 +43,7 @@ namespace GymX.Infrastructure.Persistence
         public DbSet<MemberCheckin> MemberCheckins => Set<MemberCheckin>();
         public DbSet<DayTicket> DayTickets => Set<DayTicket>();
 
+        public DbSet<PackageCategory> PackageCategories => Set<PackageCategory>();
         public DbSet<Package> Packages => Set<Package>();
 
         public DbSet<Employee> Employees => Set<Employee>();

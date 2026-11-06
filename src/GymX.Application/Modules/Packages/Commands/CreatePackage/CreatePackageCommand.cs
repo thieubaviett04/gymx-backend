@@ -11,7 +11,8 @@ public record CreatePackageCommand(
     int DurationMonths,
     DateOnly EffectiveStartDate,
     DateOnly? EffectiveEndDate,
-    string? Description) : IRequest<Result<PackageDetailDto>>
+    string? Description,
+    Guid? CategoryId = null) : IRequest<Result<PackageDetailDto>>
 {
     public static CreatePackageCommand FromRequest(CreatePackageRequest req) => new(
         req.Name.Trim(),
@@ -19,5 +20,6 @@ public record CreatePackageCommand(
         req.DurationMonths,
         req.EffectiveStartDate,
         req.EffectiveEndDate,
-        string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim());
+        string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim(),
+        req.CategoryId);
 }

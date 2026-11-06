@@ -25,5 +25,12 @@ public class PackageConfiguration : IEntityTypeConfiguration<Package>
             .WithMany()
             .HasForeignKey(p => p.PreviousPackageId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(p => p.Category)
+            .WithMany(c => c.Packages)
+            .HasForeignKey(p => p.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(p => p.CategoryId);
     }
 }

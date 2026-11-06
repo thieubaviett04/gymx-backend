@@ -24,12 +24,13 @@ public class PackagesController(ISender sender) : ControllerBase
         [FromQuery] string? durationFilter,
         [FromQuery] string? status,
         [FromQuery] string? sortBy,
+        [FromQuery] Guid? categoryId,
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
         var result = await sender.Send(
-            new GetPackagesQuery(search, durationFilter, status, sortBy, pageIndex, pageSize),
+            new GetPackagesQuery(search, durationFilter, status, sortBy, categoryId, pageIndex, pageSize),
             cancellationToken);
 
         if (result.IsSuccess)
@@ -135,12 +136,13 @@ public class PackagesController(ISender sender) : ControllerBase
         [FromQuery] string? search,
         [FromQuery] string? durationFilter,
         [FromQuery] string? sortBy,
+        [FromQuery] Guid? categoryId,
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
         var result = await sender.Send(
-            new GetPackagesQuery(search, durationFilter, PackageStatus.Active, sortBy, pageIndex, pageSize),
+            new GetPackagesQuery(search, durationFilter, PackageStatus.Active, sortBy, categoryId, pageIndex, pageSize),
             cancellationToken);
 
         if (result.IsSuccess)

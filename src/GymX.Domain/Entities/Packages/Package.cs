@@ -17,6 +17,9 @@ public class Package : EntityAuditBase, ISoftDelete
     public DateOnly EffectiveStartDate { get; private set; }
     public DateOnly? EffectiveEndDate { get; private set; }
 
+    public Guid? CategoryId { get; private set; }
+    public virtual PackageCategory? Category { get; private set; }
+
     public Guid? PreviousPackageId { get; private set; }
     public virtual Package? PreviousPackage { get; private set; }
 
@@ -49,7 +52,8 @@ public class Package : EntityAuditBase, ISoftDelete
         DateOnly? effectiveEndDate = null,
         string? description = null,
         string? customCode = null,
-        Guid? previousPackageId = null)
+        Guid? previousPackageId = null,
+        Guid? categoryId = null)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var initialStatus = effectiveStartDate > today ? PackageStatus.Inactive : PackageStatus.Active;
@@ -65,7 +69,8 @@ public class Package : EntityAuditBase, ISoftDelete
             EffectiveStartDate = effectiveStartDate,
             EffectiveEndDate = effectiveEndDate,
             Status = initialStatus,
-            PreviousPackageId = previousPackageId
+            PreviousPackageId = previousPackageId,
+            CategoryId = categoryId
         };
     }
 
@@ -81,7 +86,8 @@ public class Package : EntityAuditBase, ISoftDelete
         DateOnly effectiveStartDate,
         DateOnly? effectiveEndDate,
         string? status,
-        string? description = null)
+        string? description = null,
+        Guid? categoryId = null)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
@@ -92,6 +98,7 @@ public class Package : EntityAuditBase, ISoftDelete
         Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
         EffectiveStartDate = effectiveStartDate;
         EffectiveEndDate = effectiveEndDate;
+        CategoryId = categoryId;
 
         if (effectiveStartDate > today)
         {

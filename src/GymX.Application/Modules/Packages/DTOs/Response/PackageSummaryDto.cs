@@ -12,6 +12,9 @@ public class PackageSummaryDto
     public string Status { get; set; } = string.Empty;
     public DateOnly EffectiveStartDate { get; set; }
     public DateOnly? EffectiveEndDate { get; set; }
+    public Guid? CategoryId { get; set; }
+    public string? CategoryCode { get; set; }
+    public string? CategoryName { get; set; }
     public Guid? PreviousPackageId { get; set; }
     public string? PreviousPackageCode { get; set; }
     public int ActiveMembersCount { get; set; }

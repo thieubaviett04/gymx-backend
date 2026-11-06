@@ -10,6 +10,7 @@ namespace GymX.Application.Modules.Packages.Commands.CreatePackage;
 
 public class CreatePackageCommandHandler(
     IPackageRepository packageRepository,
+    IPackageCategoryRepository packageCategoryRepository,
     IUnitOfWork unitOfWork)
     : IRequestHandler<CreatePackageCommand, Result<PackageDetailDto>>
 {
@@ -17,6 +18,22 @@ public class CreatePackageCommandHandler(
 
     public async Task<Result<PackageDetailDto>> Handle(CreatePackageCommand command, CancellationToken cancellationToken)
     {
+        string? categoryCode = null;
+        string? categoryName = null;
+
+        if (command.CategoryId.HasValue)
+        {
+            var category = await packageCategoryRepository.GetByIdAsync(command.CategoryId.Value, cancellationToken);
+            if (category is null || category.IsDeleted)
+            {
+                return Result.Failure<PackageDetailDto>(
+                    Error.NotFound("PackageCategory.NotFound", "Không tìm thấy loại hình gói tập đã chọn."));
+            }
+
+            categoryCode = category.Code;
+            categoryName = category.Name;
+        }
+
         string packageCode;
         do
         {
@@ -30,7 +47,8 @@ public class CreatePackageCommandHandler(
             command.EffectiveStartDate,
             command.EffectiveEndDate,
             command.Description,
-            packageCode);
+            packageCode,
+            categoryId: command.CategoryId);
 
         await packageRepository.AddAsync(package, cancellationToken);
 
@@ -52,6 +70,9 @@ public class CreatePackageCommandHandler(
                     Status = package.Status,
                     EffectiveStartDate = package.EffectiveStartDate,
                     EffectiveEndDate = package.EffectiveEndDate,
+                    CategoryId = package.CategoryId,
+                    CategoryCode = categoryCode,
+                    CategoryName = categoryName,
                     PreviousPackageId = null,
                     PreviousPackageCode = null,
                     ActiveMembersCount = 0,

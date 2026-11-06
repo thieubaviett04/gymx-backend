@@ -10,6 +10,7 @@ namespace GymX.Application.Modules.Packages.Commands.UpdatePackage;
 
 public class UpdatePackageCommandHandler(
     IPackageRepository packageRepository,
+    IPackageCategoryRepository packageCategoryRepository,
     IUnitOfWork unitOfWork)
     : IRequestHandler<UpdatePackageCommand, Result<PackageDetailDto>>
 {
@@ -24,6 +25,23 @@ public class UpdatePackageCommandHandler(
                 Error.NotFound("Package.NotFound", "Không tìm thấy thông tin gói tập."));
         }
 
+        string? categoryCode = null;
+        string? categoryName = null;
+        var targetCategoryId = command.CategoryId ?? package.CategoryId;
+
+        if (targetCategoryId.HasValue)
+        {
+            var category = await packageCategoryRepository.GetByIdAsync(targetCategoryId.Value, cancellationToken);
+            if (category is null || category.IsDeleted)
+            {
+                return Result.Failure<PackageDetailDto>(
+                    Error.NotFound("PackageCategory.NotFound", "Không tìm thấy loại hình gói tập đã chọn."));
+            }
+
+            categoryCode = category.Code;
+            categoryName = category.Name;
+        }
+
         var isBeingUsed = await packageRepository.IsPackageInUseAsync(package.Id, cancellationToken);
 
         if (isBeingUsed)
@@ -34,7 +52,7 @@ public class UpdatePackageCommandHandler(
                 packageRepository.Update(package);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
 
-                return Result.Success(await MapDetailAsync(package, cancellationToken));
+                return Result.Success(await MapDetailAsync(package, cancellationToken, categoryCode: categoryCode, categoryName: categoryName));
             }
 
             if (command.Mode == "DISCONTINUE_AND_CREATE")
@@ -49,7 +67,8 @@ public class UpdatePackageCommandHandler(
                     command.EffectiveStartDate,
                     command.EffectiveEndDate,
                     command.Description,
-                    previousPackageId: package.Id);
+                    previousPackageId: package.Id,
+                    categoryId: targetCategoryId);
 
                 await packageRepository.AddAsync(newPackage, cancellationToken);
 
@@ -58,7 +77,7 @@ public class UpdatePackageCommandHandler(
                     try
                     {
                         await unitOfWork.SaveChangesAsync(cancellationToken);
-                        return Result.Success(await MapDetailAsync(newPackage, cancellationToken, previousCode: package.PackageCode));
+                        return Result.Success(await MapDetailAsync(newPackage, cancellationToken, previousCode: package.PackageCode, categoryCode: categoryCode, categoryName: categoryName));
                     }
                     catch (UniqueConstraintException)
                     {
@@ -84,17 +103,25 @@ public class UpdatePackageCommandHandler(
             command.EffectiveStartDate,
             command.EffectiveEndDate,
             command.Status,
-            command.Description);
+            command.Description,
+            targetCategoryId);
 
         packageRepository.Update(package);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(await MapDetailAsync(package, cancellationToken));
+        return Result.Success(await MapDetailAsync(package, cancellationToken, categoryCode: categoryCode, categoryName: categoryName));
     }
 
-    private async Task<PackageDetailDto> MapDetailAsync(Package pkg, CancellationToken ct, string? previousCode = null)
+    private async Task<PackageDetailDto> MapDetailAsync(Package pkg, CancellationToken ct, string? previousCode = null, string? categoryCode = null, string? categoryName = null)
     {
         var activeCount = await packageRepository.CountActiveMembersAsync(pkg.Id, ct);
+        if (pkg.CategoryId.HasValue && categoryCode == null)
+        {
+            var category = await packageCategoryRepository.GetByIdAsync(pkg.CategoryId.Value, ct);
+            categoryCode = category?.Code;
+            categoryName = category?.Name;
+        }
+
         return new PackageDetailDto
         {
             Id = pkg.Id,
@@ -107,6 +134,9 @@ public class UpdatePackageCommandHandler(
             Status = pkg.Status,
             EffectiveStartDate = pkg.EffectiveStartDate,
             EffectiveEndDate = pkg.EffectiveEndDate,
+            CategoryId = pkg.CategoryId,
+            CategoryCode = categoryCode,
+            CategoryName = categoryName,
             PreviousPackageId = pkg.PreviousPackageId,
             PreviousPackageCode = previousCode,
             ActiveMembersCount = activeCount,

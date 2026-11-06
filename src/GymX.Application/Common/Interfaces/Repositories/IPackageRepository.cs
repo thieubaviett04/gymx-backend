@@ -15,6 +15,7 @@ public interface IPackageRepository : IGenericRepository<Package>
         string? durationFilter,
         string? status,
         string? sortBy,
+        Guid? categoryId,
         int pageIndex,
         int pageSize,
         CancellationToken cancellationToken = default);

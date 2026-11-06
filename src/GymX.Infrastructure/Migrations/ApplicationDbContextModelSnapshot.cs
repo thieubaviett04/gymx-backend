@@ -1143,6 +1143,9 @@ namespace GymX.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
@@ -1199,6 +1202,8 @@ namespace GymX.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CategoryId");
+
                     b.HasIndex("PackageCode")
                         .IsUnique()
                         .HasFilter("\"IsDeleted\" = false");
@@ -1208,6 +1213,62 @@ namespace GymX.Infrastructure.Migrations
                     b.HasIndex("Status");
 
                     b.ToTable("packages", (string)null);
+                });
+
+            modelBuilder.Entity("GymX.Domain.Entities.Packages.PackageCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("LastModifiedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("package_categories", (string)null);
                 });
 
             modelBuilder.Entity("GymX.Domain.Entities.Payroll.PayrollPeriod", b =>
@@ -1804,10 +1865,17 @@ namespace GymX.Infrastructure.Migrations
 
             modelBuilder.Entity("GymX.Domain.Entities.Packages.Package", b =>
                 {
+                    b.HasOne("GymX.Domain.Entities.Packages.PackageCategory", "Category")
+                        .WithMany("Packages")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("GymX.Domain.Entities.Packages.Package", "PreviousPackage")
                         .WithMany()
                         .HasForeignKey("PreviousPackageId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Category");
 
                     b.Navigation("PreviousPackage");
                 });
@@ -1860,6 +1928,11 @@ namespace GymX.Infrastructure.Migrations
                     b.Navigation("RefreshTokens");
 
                     b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("GymX.Domain.Entities.Packages.PackageCategory", b =>
+                {
+                    b.Navigation("Packages");
                 });
 #pragma warning restore 612, 618
         }

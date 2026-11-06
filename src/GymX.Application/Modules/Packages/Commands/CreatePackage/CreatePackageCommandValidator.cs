@@ -27,5 +27,12 @@ public class CreatePackageCommandValidator : AbstractValidator<CreatePackageComm
                 .GreaterThanOrEqualTo(x => x.EffectiveStartDate)
                 .WithMessage("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu áp dụng.");
         });
+
+        When(x => x.CategoryId.HasValue, () =>
+        {
+            RuleFor(x => x.CategoryId!.Value)
+                .NotEmpty()
+                .WithMessage("Mã loại hình gói tập không hợp lệ.");
+        });
     }
 }
