@@ -25,8 +25,9 @@ namespace GymX.Infrastructure.Persistence.Interceptors
                 dbUpdateException.InnerException is PostgresException postgresException &&
                 postgresException.SqlState == PostgresErrorCodes.UniqueViolation)
             {
-                throw new UniqueConstraintException("A unique constraint violation occurred while saving changes.", dbUpdateException);
+                throw new UniqueConstraintException("Đã xảy ra lỗi vi phạm ràng buộc dữ liệu duy nhất khi lưu thay đổi.", dbUpdateException);
             }
         }
     }
 }
+
