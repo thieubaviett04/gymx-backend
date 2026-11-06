@@ -90,10 +90,7 @@ public class PackagesController(ISender sender) : ControllerBase
         return result.Error.Code switch
         {
             "Package.NotFound" => NotFound(new { error = result.Error }),
-            "Package.CannotModifyDiscontinued" => Conflict(new { error = result.Error }),
-            "Package.CannotModifyPurchasedPackage" => Conflict(new { error = result.Error }),
-            "Package.CannotModifyPriceOrDuration" => Conflict(new { error = result.Error }),
-            "Package.InUse" => Conflict(new { error = result.Error }),
+            "PackageCategory.NotFound" => NotFound(new { error = result.Error }),
             _ => BadRequest(new { error = result.Error })
         };
     }
@@ -112,7 +109,6 @@ public class PackagesController(ISender sender) : ControllerBase
         {
             "Package.NotFound" => NotFound(new { error = result.Error }),
             "Package.CannotDeleteInUse" => Conflict(new { error = result.Error }),
-            "Package.CannotDeleteHistoricPackage" => Conflict(new { error = result.Error }),
             _ => BadRequest(new { error = result.Error })
         };
     }

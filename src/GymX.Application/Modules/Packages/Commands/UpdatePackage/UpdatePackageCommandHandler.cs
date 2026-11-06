@@ -2,7 +2,6 @@ using GymX.Application.Common.Interfaces;
 using GymX.Application.Common.Interfaces.Repositories;
 using GymX.Application.Modules.Packages.DTOs.Response;
 using GymX.Domain.Common.Models;
-using GymX.Domain.Constants;
 using GymX.Domain.Entities.Packages;
 using MediatR;
 
@@ -21,13 +20,6 @@ public class UpdatePackageCommandHandler(
         {
             return Result.Failure<PackageDetailDto>(
                 Error.NotFound("Package.NotFound", "Không tìm thấy thông tin gói tập."));
-        }
-
-        var hasEverBeenPurchased = await packageRepository.HasEverBeenPurchasedAsync(package.Id, cancellationToken);
-        if (hasEverBeenPurchased && package.Status == PackageStatus.Discontinued)
-        {
-            return Result.Failure<PackageDetailDto>(
-                Error.Conflict("Package.CannotModifyDiscontinued", "Không thể chỉnh sửa gói tập đã ngừng kinh doanh để đảm bảo tính toàn vẹn của dữ liệu lịch sử và hợp đồng hội viên."));
         }
 
         string? categoryCode = null;
