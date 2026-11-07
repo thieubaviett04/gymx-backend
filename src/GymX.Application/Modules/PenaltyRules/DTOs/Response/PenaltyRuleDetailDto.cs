@@ -9,8 +9,8 @@ public class PenaltyRuleDetailDto
     public decimal FineAmount { get; set; }
     public string SeverityLevel { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public DateOnly EffectiveDate { get; set; }
     public DateTime EffectiveFrom { get; set; }
-    public DateTime? EffectiveTo { get; set; }
     public string? Description { get; set; }
     public Guid? PreviousRuleId { get; set; }
     public string? PreviousRuleCode { get; set; }

@@ -14,13 +14,19 @@ public record CreatePenaltyRuleCommand(
     string? Description,
     string? ViolationType) : IRequest<Result<PenaltyRuleDetailDto>>
 {
-    public static CreatePenaltyRuleCommand FromRequest(CreatePenaltyRuleRequest request) =>
-        new(
+    public static CreatePenaltyRuleCommand FromRequest(CreatePenaltyRuleRequest request)
+    {
+        var effectiveFrom = request.EffectiveDate.HasValue
+            ? request.EffectiveDate.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc)
+            : (request.EffectiveFrom ?? DateTime.UtcNow);
+
+        return new(
             request.Name,
             request.FineAmount ?? 0,
             request.SeverityLevel,
-            request.EffectiveFrom ?? DateTime.UtcNow,
+            effectiveFrom,
             request.Status,
             request.Description,
             request.ViolationType);
+    }
 }

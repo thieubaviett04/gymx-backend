@@ -12,3 +12,4 @@ public static class RuleTargetAudience
         !string.IsNullOrWhiteSpace(audience) &&
         All.Contains(audience.Trim().ToUpperInvariant());
 }
+

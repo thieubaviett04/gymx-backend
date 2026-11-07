@@ -110,7 +110,6 @@ public class PenaltyRule : EntityAuditBase, ISoftDelete
     public void Discontinue()
     {
         Status = PenaltyRuleStatus.Discontinued;
-        EffectiveTo = DateTime.UtcNow;
     }
 
     public void SoftDelete()

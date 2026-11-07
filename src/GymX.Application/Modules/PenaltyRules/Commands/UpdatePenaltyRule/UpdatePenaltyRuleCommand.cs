@@ -16,15 +16,21 @@ public record UpdatePenaltyRuleCommand(
     string? ViolationType,
     string? Mode) : IRequest<Result<PenaltyRuleDetailDto>>
 {
-    public static UpdatePenaltyRuleCommand FromRequest(Guid ruleId, UpdatePenaltyRuleRequest request) =>
-        new(
+    public static UpdatePenaltyRuleCommand FromRequest(Guid ruleId, UpdatePenaltyRuleRequest request)
+    {
+        var effectiveFrom = request.EffectiveDate.HasValue
+            ? request.EffectiveDate.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc)
+            : (request.EffectiveFrom ?? DateTime.UtcNow);
+
+        return new(
             ruleId,
             request.Name,
             request.FineAmount ?? 0,
             request.SeverityLevel,
-            request.EffectiveFrom,
+            effectiveFrom,
             request.Status,
             request.Description,
             request.ViolationType,
             request.Mode);
+    }
 }
