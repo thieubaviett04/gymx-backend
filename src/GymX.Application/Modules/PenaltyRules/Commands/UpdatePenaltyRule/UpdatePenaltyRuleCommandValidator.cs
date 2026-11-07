@@ -20,6 +20,6 @@ public class UpdatePenaltyRuleCommandValidator : AbstractValidator<UpdatePenalty
             .WithMessage("Mức độ nghiêm trọng phải là LOW, MEDIUM hoặc HIGH.");
 
         RuleFor(command => command.Status)
-            .Must(PenaltyRuleStatus.IsValid).WithMessage("Trạng thái quy định phạt không hợp lệ (PENDING, APPLIED, DISCONTINUED).");
+            .Must(PenaltyRuleStatus.IsValid).WithMessage("Trạng thái quy định phạt không hợp lệ (ACTIVE, INACTIVE, APPLIED, DISCONTINUED).");
     }
 }

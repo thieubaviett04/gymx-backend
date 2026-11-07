@@ -20,7 +20,13 @@ public class CreatePenaltyRuleCommandValidator : AbstractValidator<CreatePenalty
             .WithMessage("Mức độ nghiêm trọng phải là LOW, MEDIUM hoặc HIGH.");
 
         RuleFor(command => command.EffectiveFrom)
-            .GreaterThanOrEqualTo(DateTime.UtcNow.AddMinutes(-5))
+            .Must(effectiveFrom =>
+            {
+                var normalized = effectiveFrom.Kind == DateTimeKind.Unspecified
+                    ? DateTime.SpecifyKind(effectiveFrom, DateTimeKind.Utc)
+                    : effectiveFrom.ToUniversalTime();
+                return normalized.Date >= DateTime.UtcNow.AddDays(-1).Date;
+            })
             .WithMessage("Thời điểm áp dụng không được chọn thời điểm trong quá khứ.");
     }
 }

@@ -88,7 +88,6 @@ public class PenaltyRulesController(ISender sender) : ControllerBase
         return result.Error.Code switch
         {
             "PenaltyRule.NotFound" => NotFound(new { error = result.Error }),
-            "PenaltyRule.InUse" => Conflict(new { error = result.Error, canDiscontinueAndCreate = true }),
             _ => BadRequest(new { error = result.Error })
         };
     }
@@ -106,7 +105,6 @@ public class PenaltyRulesController(ISender sender) : ControllerBase
         return result.Error.Code switch
         {
             "PenaltyRule.NotFound" => NotFound(new { error = result.Error }),
-            "PenaltyRule.CannotDeleteInUse" => Conflict(new { error = result.Error, canDiscontinue = true }),
             _ => BadRequest(new { error = result.Error })
         };
     }
