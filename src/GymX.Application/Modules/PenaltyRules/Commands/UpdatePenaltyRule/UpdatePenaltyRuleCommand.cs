@@ -18,9 +18,19 @@ public record UpdatePenaltyRuleCommand(
 {
     public static UpdatePenaltyRuleCommand FromRequest(Guid ruleId, UpdatePenaltyRuleRequest request)
     {
-        var effectiveFrom = request.EffectiveDate.HasValue
-            ? request.EffectiveDate.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc)
-            : (request.EffectiveFrom ?? DateTime.UtcNow);
+        DateTime effectiveFrom;
+        if (request.EffectiveDate.HasValue && request.EffectiveDate.Value.Year >= 2000)
+        {
+            effectiveFrom = request.EffectiveDate.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        }
+        else if (request.EffectiveFrom.HasValue && request.EffectiveFrom.Value.Year >= 2000)
+        {
+            effectiveFrom = request.EffectiveFrom.Value;
+        }
+        else
+        {
+            effectiveFrom = DateTime.UtcNow;
+        }
 
         return new(
             ruleId,

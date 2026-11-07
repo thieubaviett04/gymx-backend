@@ -101,15 +101,33 @@ public class PenaltyRule : EntityAuditBase, ISoftDelete
             ViolationType = violationType.Trim().ToUpperInvariant();
         }
 
-        EffectiveFrom = effectiveFrom.Kind == DateTimeKind.Unspecified
-            ? DateTime.SpecifyKind(effectiveFrom, DateTimeKind.Utc)
-            : effectiveFrom.ToUniversalTime();
-        EffectiveDate = DateOnly.FromDateTime(EffectiveFrom);
+        if (effectiveFrom != default && effectiveFrom.Year >= 2000)
+        {
+            EffectiveFrom = effectiveFrom.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(effectiveFrom, DateTimeKind.Utc)
+                : effectiveFrom.ToUniversalTime();
+            EffectiveDate = DateOnly.FromDateTime(EffectiveFrom);
+        }
+        else if (EffectiveFrom == default || EffectiveFrom.Year < 2000)
+        {
+            EffectiveFrom = DateTime.UtcNow;
+            EffectiveDate = DateOnly.FromDateTime(EffectiveFrom);
+        }
+
+        if (Status == PenaltyRuleStatus.Discontinued || Status == PenaltyRuleStatus.Inactive)
+        {
+            EffectiveTo = DateTime.UtcNow;
+        }
+        else
+        {
+            EffectiveTo = null;
+        }
     }
 
     public void Discontinue()
     {
         Status = PenaltyRuleStatus.Discontinued;
+        EffectiveTo = DateTime.UtcNow;
     }
 
     public void SoftDelete()
