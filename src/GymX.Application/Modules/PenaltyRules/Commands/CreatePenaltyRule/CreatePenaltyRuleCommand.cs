@@ -11,7 +11,8 @@ public record CreatePenaltyRuleCommand(
     string SeverityLevel,
     DateTime EffectiveFrom,
     string? Status,
-    string? Description) : IRequest<Result<PenaltyRuleDetailDto>>
+    string? Description,
+    string? ViolationType) : IRequest<Result<PenaltyRuleDetailDto>>
 {
     public static CreatePenaltyRuleCommand FromRequest(CreatePenaltyRuleRequest request) =>
         new(
@@ -20,5 +21,6 @@ public record CreatePenaltyRuleCommand(
             request.SeverityLevel,
             request.EffectiveFrom ?? DateTime.UtcNow,
             request.Status,
-            request.Description);
+            request.Description,
+            request.ViolationType);
 }

@@ -8,4 +8,5 @@ public class CreatePenaltyRuleRequest
     public DateTime? EffectiveFrom { get; set; }
     public string? Status { get; set; }
     public string? Description { get; set; }
+    public string? ViolationType { get; set; }
 }

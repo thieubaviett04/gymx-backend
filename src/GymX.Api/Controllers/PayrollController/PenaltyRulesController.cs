@@ -22,13 +22,14 @@ public class PenaltyRulesController(ISender sender) : ControllerBase
         [FromQuery] string? search,
         [FromQuery] string? severity,
         [FromQuery] string? status,
+        [FromQuery] string? targetAudience,
         [FromQuery] string? sortBy,
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
         var result = await sender.Send(
-            new GetPenaltyRulesQuery(search, severity, status, sortBy, pageIndex, pageSize),
+            new GetPenaltyRulesQuery(search, severity, status, targetAudience, sortBy, pageIndex, pageSize),
             cancellationToken);
 
         if (result.IsSuccess)

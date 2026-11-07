@@ -22,7 +22,8 @@ public class CreatePenaltyRuleCommandHandler(
             command.SeverityLevel,
             command.EffectiveFrom,
             command.Description,
-            command.Status);
+            command.Status,
+            violationType: command.ViolationType);
 
         await penaltyRuleRepository.AddAsync(penaltyRule, cancellationToken);
 
@@ -64,6 +65,7 @@ public class CreatePenaltyRuleCommandHandler(
         Id = rule.Id,
         RuleCode = rule.RuleCode,
         Name = rule.Name,
+        ViolationType = rule.ViolationType,
         FineAmount = rule.FineAmount,
         SeverityLevel = rule.SeverityLevel,
         Status = rule.Status,

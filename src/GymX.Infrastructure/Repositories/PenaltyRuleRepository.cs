@@ -34,6 +34,7 @@ public class PenaltyRuleRepository(ApplicationDbContext context)
         string? search,
         string? severity,
         string? status,
+        string? targetAudience,
         string? sortBy,
         int pageIndex,
         int pageSize,
@@ -49,16 +50,22 @@ public class PenaltyRuleRepository(ApplicationDbContext context)
                 EF.Functions.ILike(penaltyRule.Name, $"%{searchKeyword}%"));
         }
 
-        if (!string.IsNullOrWhiteSpace(severity))
+        if (!string.IsNullOrWhiteSpace(severity) && severity.Trim().ToUpperInvariant() != "ALL")
         {
             var filterSeverity = severity.Trim().ToUpperInvariant();
             penaltyRulesQuery = penaltyRulesQuery.Where(penaltyRule => penaltyRule.SeverityLevel == filterSeverity);
         }
 
-        if (!string.IsNullOrWhiteSpace(status))
+        if (!string.IsNullOrWhiteSpace(status) && status.Trim().ToUpperInvariant() != "ALL")
         {
             var filterStatus = status.Trim().ToUpperInvariant();
             penaltyRulesQuery = penaltyRulesQuery.Where(penaltyRule => penaltyRule.Status == filterStatus);
+        }
+
+        if (!string.IsNullOrWhiteSpace(targetAudience) && targetAudience.Trim().ToUpperInvariant() != "ALL")
+        {
+            var filterAudience = targetAudience.Trim().ToUpperInvariant();
+            penaltyRulesQuery = penaltyRulesQuery.Where(penaltyRule => penaltyRule.ViolationType == filterAudience);
         }
 
         penaltyRulesQuery = sortBy?.Trim().ToLower() switch
@@ -80,6 +87,7 @@ public class PenaltyRuleRepository(ApplicationDbContext context)
                 Id = penaltyRule.Id,
                 RuleCode = penaltyRule.RuleCode,
                 Name = penaltyRule.Name,
+                ViolationType = penaltyRule.ViolationType,
                 FineAmount = penaltyRule.FineAmount,
                 SeverityLevel = penaltyRule.SeverityLevel,
                 Status = penaltyRule.Status,
@@ -112,6 +120,7 @@ public class PenaltyRuleRepository(ApplicationDbContext context)
             Id = penaltyRule.Id,
             RuleCode = penaltyRule.RuleCode,
             Name = penaltyRule.Name,
+            ViolationType = penaltyRule.ViolationType,
             FineAmount = penaltyRule.FineAmount,
             SeverityLevel = penaltyRule.SeverityLevel,
             Status = penaltyRule.Status,

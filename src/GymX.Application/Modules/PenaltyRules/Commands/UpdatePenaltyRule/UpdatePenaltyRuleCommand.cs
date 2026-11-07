@@ -13,6 +13,7 @@ public record UpdatePenaltyRuleCommand(
     DateTime EffectiveFrom,
     string Status,
     string? Description,
+    string? ViolationType,
     string? Mode) : IRequest<Result<PenaltyRuleDetailDto>>
 {
     public static UpdatePenaltyRuleCommand FromRequest(Guid ruleId, UpdatePenaltyRuleRequest request) =>
@@ -24,5 +25,6 @@ public record UpdatePenaltyRuleCommand(
             request.EffectiveFrom,
             request.Status,
             request.Description,
+            request.ViolationType,
             request.Mode);
 }

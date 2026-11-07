@@ -8,5 +8,6 @@ public class UpdatePenaltyRuleRequest
     public DateTime EffectiveFrom { get; set; }
     public string Status { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public string? ViolationType { get; set; }
     public string? Mode { get; set; }
 }

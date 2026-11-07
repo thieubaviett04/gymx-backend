@@ -14,6 +14,7 @@ public class GetPenaltyRulesQueryHandler(IPenaltyRuleRepository penaltyRuleRepos
             query.Search,
             query.Severity,
             query.Status,
+            query.TargetAudience,
             query.SortBy,
             query.PageIndex,
             query.PageSize,

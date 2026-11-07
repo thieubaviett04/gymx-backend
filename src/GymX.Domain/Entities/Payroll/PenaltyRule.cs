@@ -36,7 +36,8 @@ public class PenaltyRule : EntityAuditBase, ISoftDelete
         string? description = null,
         string? status = null,
         Guid? previousRuleId = null,
-        string? customCode = null)
+        string? customCode = null,
+        string? violationType = null)
     {
         var currentUtcTime = DateTime.UtcNow;
         var normalizedEffectiveFrom = effectiveFrom.Kind == DateTimeKind.Unspecified
@@ -52,7 +53,7 @@ public class PenaltyRule : EntityAuditBase, ISoftDelete
         {
             resolvedStatus = normalizedEffectiveFrom > currentUtcTime.AddMinutes(2)
                 ? PenaltyRuleStatus.Pending
-                : PenaltyRuleStatus.Applied;
+                : PenaltyRuleStatus.Active;
         }
 
         return new PenaltyRule
@@ -65,7 +66,8 @@ public class PenaltyRule : EntityAuditBase, ISoftDelete
             EffectiveFrom = normalizedEffectiveFrom,
             EffectiveDate = DateOnly.FromDateTime(normalizedEffectiveFrom),
             Description = description?.Trim(),
-            PreviousRuleId = previousRuleId
+            PreviousRuleId = previousRuleId,
+            ViolationType = !string.IsNullOrWhiteSpace(violationType) ? violationType.Trim().ToUpperInvariant() : RuleTargetAudience.General
         };
     }
 
@@ -85,13 +87,19 @@ public class PenaltyRule : EntityAuditBase, ISoftDelete
         string severityLevel,
         DateTime effectiveFrom,
         string status,
-        string? description = null)
+        string? description = null,
+        string? violationType = null)
     {
         Name = name.Trim();
         FineAmount = fineAmount;
         SeverityLevel = severityLevel.Trim().ToUpperInvariant();
         Status = status.Trim().ToUpperInvariant();
         Description = description?.Trim();
+
+        if (!string.IsNullOrWhiteSpace(violationType))
+        {
+            ViolationType = violationType.Trim().ToUpperInvariant();
+        }
 
         EffectiveFrom = effectiveFrom.Kind == DateTimeKind.Unspecified
             ? DateTime.SpecifyKind(effectiveFrom, DateTimeKind.Utc)

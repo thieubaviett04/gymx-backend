@@ -27,7 +27,8 @@ public class UpdatePenaltyRuleCommandHandler(
             command.SeverityLevel,
             command.EffectiveFrom,
             command.Status,
-            command.Description);
+            command.Description,
+            command.ViolationType);
 
         penaltyRuleRepository.Update(existingPenaltyRule);
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -41,6 +42,7 @@ public class UpdatePenaltyRuleCommandHandler(
         Id = rule.Id,
         RuleCode = rule.RuleCode,
         Name = rule.Name,
+        ViolationType = rule.ViolationType,
         FineAmount = rule.FineAmount,
         SeverityLevel = rule.SeverityLevel,
         Status = rule.Status,

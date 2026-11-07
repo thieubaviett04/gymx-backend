@@ -14,6 +14,7 @@ public interface IPenaltyRuleRepository : IGenericRepository<PenaltyRule>
         string? search,
         string? severity,
         string? status,
+        string? targetAudience,
         string? sortBy,
         int pageIndex,
         int pageSize,
