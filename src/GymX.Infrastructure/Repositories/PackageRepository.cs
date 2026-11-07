@@ -19,7 +19,7 @@ public class PackageRepository(ApplicationDbContext context)
 
     public Task<bool> IsPackageInUseAsync(Guid packageId, CancellationToken cancellationToken = default)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
         return Context.MemberPackages.AnyAsync(mp =>
             mp.PackageId == packageId &&
             mp.Status == MemberPackageStatus.Active &&
@@ -32,7 +32,7 @@ public class PackageRepository(ApplicationDbContext context)
 
     public Task<int> CountActiveMembersAsync(Guid packageId, CancellationToken cancellationToken = default)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
         return Context.MemberPackages.CountAsync(mp =>
             mp.PackageId == packageId &&
             mp.Status == MemberPackageStatus.Active &&
@@ -51,7 +51,7 @@ public class PackageRepository(ApplicationDbContext context)
         bool enforceEffectiveDates = false,
         CancellationToken cancellationToken = default)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
         var query = DbSet.AsNoTracking().Where(p => !p.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -84,10 +84,21 @@ public class PackageRepository(ApplicationDbContext context)
             };
         }
 
-        if (!string.IsNullOrWhiteSpace(status))
+        if (!string.IsNullOrWhiteSpace(status) && status.Trim().ToUpperInvariant() != "ALL")
         {
             var stat = status.Trim().ToUpperInvariant();
-            query = query.Where(p => p.Status == stat);
+            if (stat == PackageStatus.Active)
+            {
+                query = query.Where(p => p.Status == PackageStatus.Active || (p.Status == PackageStatus.Pending && p.EffectiveStartDate <= today));
+            }
+            else if (stat == PackageStatus.Pending)
+            {
+                query = query.Where(p => p.Status == PackageStatus.Pending && p.EffectiveStartDate > today);
+            }
+            else
+            {
+                query = query.Where(p => p.Status == stat);
+            }
         }
 
         query = sortBy?.Trim().ToLower() switch
@@ -114,7 +125,9 @@ public class PackageRepository(ApplicationDbContext context)
                 DurationMonths = p.DurationMonths,
                 DurationDays = p.DurationDays,
                 Description = p.Description,
-                Status = p.Status,
+                Status = p.Status == PackageStatus.Pending && p.EffectiveStartDate <= today
+                    ? PackageStatus.Active
+                    : p.Status,
                 EffectiveStartDate = p.EffectiveStartDate,
                 CategoryId = p.CategoryId,
                 CategoryCode = p.Category != null ? p.Category.Code : null,
@@ -141,7 +154,7 @@ public class PackageRepository(ApplicationDbContext context)
 
         if (package is null) return null;
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
         var activeCount = await Context.MemberPackages.CountAsync(mp =>
             mp.PackageId == packageId &&
             mp.Status == MemberPackageStatus.Active &&
@@ -157,7 +170,9 @@ public class PackageRepository(ApplicationDbContext context)
             DurationMonths = package.DurationMonths,
             DurationDays = package.DurationDays,
             Description = package.Description,
-            Status = package.Status,
+            Status = package.Status == PackageStatus.Pending && package.EffectiveStartDate <= today
+                ? PackageStatus.Active
+                : package.Status,
             EffectiveStartDate = package.EffectiveStartDate,
             CategoryId = package.CategoryId,
             CategoryCode = package.Category?.Code,

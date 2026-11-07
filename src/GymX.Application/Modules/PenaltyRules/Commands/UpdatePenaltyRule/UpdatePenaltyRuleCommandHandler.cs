@@ -33,26 +33,7 @@ public class UpdatePenaltyRuleCommandHandler(
         penaltyRuleRepository.Update(existingPenaltyRule);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var appliedViolationsCount = await penaltyRuleRepository.CountViolationsAsync(existingPenaltyRule.Id, cancellationToken);
-        return Result.Success(MapPenaltyRuleDetail(existingPenaltyRule, violationsCount: appliedViolationsCount));
+        var detail = await penaltyRuleRepository.GetPenaltyRuleDetailByIdAsync(existingPenaltyRule.Id, cancellationToken);
+        return Result.Success(detail!);
     }
-
-    private static PenaltyRuleDetailDto MapPenaltyRuleDetail(PenaltyRule rule, string? previousCode = null, int violationsCount = 0) => new()
-    {
-        Id = rule.Id,
-        RuleCode = rule.RuleCode,
-        Name = rule.Name,
-        ViolationType = rule.ViolationType,
-        FineAmount = rule.FineAmount,
-        SeverityLevel = rule.SeverityLevel,
-        Status = rule.Status,
-        EffectiveDate = rule.EffectiveDate,
-        EffectiveFrom = rule.EffectiveFrom,
-        Description = rule.Description,
-        PreviousRuleId = rule.PreviousRuleId,
-        PreviousRuleCode = previousCode,
-        ViolationsCount = violationsCount,
-        CreatedDate = rule.CreatedDate,
-        LastModifiedDate = rule.LastModifiedDate
-    };
 }

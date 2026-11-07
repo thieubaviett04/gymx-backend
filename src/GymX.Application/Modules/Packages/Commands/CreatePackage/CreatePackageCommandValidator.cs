@@ -18,8 +18,32 @@ public class CreatePackageCommandValidator : AbstractValidator<CreatePackageComm
             .GreaterThan(0).WithMessage("Thời hạn gói tập phải là số nguyên dương.");
 
         RuleFor(x => x.EffectiveStartDate)
-            .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow))
+            .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7).AddDays(-1)))
             .WithMessage("Ngày bắt đầu áp dụng không được chọn ngày ở quá khứ.");
+
+        RuleFor(x => x.EffectiveStartDate)
+            .Must((command, effectiveStartDate) =>
+            {
+                if (command.Status == GymX.Domain.Constants.PackageStatus.Pending)
+                {
+                    return effectiveStartDate > DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+                }
+                return true;
+            })
+            .WithName("effectiveStartDate")
+            .WithMessage("Trạng thái chưa áp dụng không thể chọn ngày hiện tại, quá khứ.");
+
+        RuleFor(x => x.EffectiveStartDate)
+            .Must((command, effectiveStartDate) =>
+            {
+                if (command.Status == GymX.Domain.Constants.PackageStatus.Active)
+                {
+                    return effectiveStartDate <= DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+                }
+                return true;
+            })
+            .WithName("effectiveStartDate")
+            .WithMessage("Trạng thái đang áp dụng không thể chọn ngày tương lai.");
 
         When(x => x.CategoryId.HasValue, () =>
         {
@@ -32,7 +56,7 @@ public class CreatePackageCommandValidator : AbstractValidator<CreatePackageComm
         {
             RuleFor(x => x.Status!)
                 .Must(GymX.Domain.Constants.PackageStatus.IsValid)
-                .WithMessage("Trạng thái gói tập không hợp lệ. Chỉ chấp nhận ACTIVE hoặc INACTIVE.");
+                .WithMessage("Trạng thái gói tập không hợp lệ (ACTIVE, PENDING, INACTIVE, DISCONTINUED).");
         });
     }
 }

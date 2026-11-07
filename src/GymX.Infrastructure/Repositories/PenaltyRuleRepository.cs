@@ -80,7 +80,7 @@ public class PenaltyRuleRepository(ApplicationDbContext context)
 
         var totalCount = await penaltyRulesQuery.LongCountAsync(cancellationToken);
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
 
         var penaltyRuleSummaries = await penaltyRulesQuery
             .Skip((pageIndex - 1) * pageSize)
@@ -118,7 +118,7 @@ public class PenaltyRuleRepository(ApplicationDbContext context)
             return null;
         }
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
         var appliedViolationsCount = await Context.Violations.CountAsync(violation => violation.PenaltyRuleId == penaltyRule.Id, cancellationToken);
 
         return new PenaltyRuleDetailDto

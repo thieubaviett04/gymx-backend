@@ -1,6 +1,7 @@
 using GymX.Application.Modules.PenaltyRules.DTOs.Request;
 using GymX.Application.Modules.PenaltyRules.DTOs.Response;
 using GymX.Domain.Common.Models;
+using GymX.Domain.Constants;
 using MediatR;
 
 namespace GymX.Application.Modules.PenaltyRules.Commands.UpdatePenaltyRule;
@@ -32,13 +33,16 @@ public record UpdatePenaltyRuleCommand(
             effectiveFrom = DateTime.UtcNow;
         }
 
+        var isMember = string.Equals(request.ViolationType?.Trim(), RuleTargetAudience.Member, StringComparison.OrdinalIgnoreCase);
+        var fineAmount = isMember ? 0 : (request.FineAmount ?? 0);
+
         return new(
             ruleId,
             request.Name,
-            request.FineAmount ?? 0,
+            fineAmount,
             request.SeverityLevel,
             effectiveFrom,
-            request.Status,
+            string.IsNullOrWhiteSpace(request.Status) ? PenaltyRuleStatus.Active : request.Status,
             request.Description,
             request.ViolationType,
             request.Mode);
