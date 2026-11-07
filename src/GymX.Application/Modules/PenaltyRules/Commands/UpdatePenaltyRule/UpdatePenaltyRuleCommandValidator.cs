@@ -21,5 +21,19 @@ public class UpdatePenaltyRuleCommandValidator : AbstractValidator<UpdatePenalty
 
         RuleFor(command => command.Status)
             .Must(PenaltyRuleStatus.IsValid).WithMessage("Trạng thái quy định phạt không hợp lệ (ACTIVE, INACTIVE, APPLIED, DISCONTINUED).");
+
+        RuleFor(command => command)
+            .Must(command =>
+            {
+                if (command.Status == PenaltyRuleStatus.Pending)
+                {
+                    var normalized = command.EffectiveFrom.Kind == DateTimeKind.Unspecified
+                        ? DateTime.SpecifyKind(command.EffectiveFrom, DateTimeKind.Utc)
+                        : command.EffectiveFrom.ToUniversalTime();
+                    return normalized.Date > DateTime.UtcNow.Date;
+                }
+                return true;
+            })
+            .WithMessage("Nếu chọn trạng thái Chờ áp dụng, ngày hiệu lực bắt buộc phải là ngày trong tương lai (sau ngày hôm nay).");
     }
 }
