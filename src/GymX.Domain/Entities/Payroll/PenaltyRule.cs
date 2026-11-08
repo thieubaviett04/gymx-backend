@@ -36,7 +36,8 @@ public class PenaltyRule : EntityAuditBase, ISoftDelete
         string? description = null,
         string? status = null,
         Guid? previousRuleId = null,
-        string? customCode = null)
+        string? customCode = null,
+        string? violationType = null)
     {
         var currentUtcTime = DateTime.UtcNow;
         var normalizedEffectiveFrom = effectiveFrom.Kind == DateTimeKind.Unspecified
@@ -52,7 +53,7 @@ public class PenaltyRule : EntityAuditBase, ISoftDelete
         {
             resolvedStatus = normalizedEffectiveFrom > currentUtcTime.AddMinutes(2)
                 ? PenaltyRuleStatus.Pending
-                : PenaltyRuleStatus.Applied;
+                : PenaltyRuleStatus.Active;
         }
 
         return new PenaltyRule
@@ -65,7 +66,8 @@ public class PenaltyRule : EntityAuditBase, ISoftDelete
             EffectiveFrom = normalizedEffectiveFrom,
             EffectiveDate = DateOnly.FromDateTime(normalizedEffectiveFrom),
             Description = description?.Trim(),
-            PreviousRuleId = previousRuleId
+            PreviousRuleId = previousRuleId,
+            ViolationType = !string.IsNullOrWhiteSpace(violationType) ? violationType.Trim().ToUpperInvariant() : RuleTargetAudience.General
         };
     }
 
@@ -85,7 +87,8 @@ public class PenaltyRule : EntityAuditBase, ISoftDelete
         string severityLevel,
         DateTime effectiveFrom,
         string status,
-        string? description = null)
+        string? description = null,
+        string? violationType = null)
     {
         Name = name.Trim();
         FineAmount = fineAmount;
@@ -93,10 +96,32 @@ public class PenaltyRule : EntityAuditBase, ISoftDelete
         Status = status.Trim().ToUpperInvariant();
         Description = description?.Trim();
 
-        EffectiveFrom = effectiveFrom.Kind == DateTimeKind.Unspecified
-            ? DateTime.SpecifyKind(effectiveFrom, DateTimeKind.Utc)
-            : effectiveFrom.ToUniversalTime();
-        EffectiveDate = DateOnly.FromDateTime(EffectiveFrom);
+        if (!string.IsNullOrWhiteSpace(violationType))
+        {
+            ViolationType = violationType.Trim().ToUpperInvariant();
+        }
+
+        if (effectiveFrom != default && effectiveFrom.Year >= 2000)
+        {
+            EffectiveFrom = effectiveFrom.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(effectiveFrom, DateTimeKind.Utc)
+                : effectiveFrom.ToUniversalTime();
+            EffectiveDate = DateOnly.FromDateTime(EffectiveFrom);
+        }
+        else if (EffectiveFrom == default || EffectiveFrom.Year < 2000)
+        {
+            EffectiveFrom = DateTime.UtcNow;
+            EffectiveDate = DateOnly.FromDateTime(EffectiveFrom);
+        }
+
+        if (Status == PenaltyRuleStatus.Discontinued || Status == PenaltyRuleStatus.Inactive)
+        {
+            EffectiveTo = DateTime.UtcNow;
+        }
+        else
+        {
+            EffectiveTo = null;
+        }
     }
 
     public void Discontinue()

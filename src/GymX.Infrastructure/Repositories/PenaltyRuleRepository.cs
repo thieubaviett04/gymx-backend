@@ -1,6 +1,7 @@
 using GymX.Application.Common.Interfaces.Repositories;
 using GymX.Application.Modules.PenaltyRules.DTOs.Response;
 using GymX.Domain.Common.Models;
+using GymX.Domain.Constants;
 using GymX.Domain.Entities.Payroll;
 using GymX.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +35,7 @@ public class PenaltyRuleRepository(ApplicationDbContext context)
         string? search,
         string? severity,
         string? status,
+        string? targetAudience,
         string? sortBy,
         int pageIndex,
         int pageSize,
@@ -49,16 +51,22 @@ public class PenaltyRuleRepository(ApplicationDbContext context)
                 EF.Functions.ILike(penaltyRule.Name, $"%{searchKeyword}%"));
         }
 
-        if (!string.IsNullOrWhiteSpace(severity))
+        if (!string.IsNullOrWhiteSpace(severity) && severity.Trim().ToUpperInvariant() != "ALL")
         {
             var filterSeverity = severity.Trim().ToUpperInvariant();
             penaltyRulesQuery = penaltyRulesQuery.Where(penaltyRule => penaltyRule.SeverityLevel == filterSeverity);
         }
 
-        if (!string.IsNullOrWhiteSpace(status))
+        if (!string.IsNullOrWhiteSpace(status) && status.Trim().ToUpperInvariant() != "ALL")
         {
             var filterStatus = status.Trim().ToUpperInvariant();
             penaltyRulesQuery = penaltyRulesQuery.Where(penaltyRule => penaltyRule.Status == filterStatus);
+        }
+
+        if (!string.IsNullOrWhiteSpace(targetAudience) && targetAudience.Trim().ToUpperInvariant() != "ALL")
+        {
+            var filterAudience = targetAudience.Trim().ToUpperInvariant();
+            penaltyRulesQuery = penaltyRulesQuery.Where(penaltyRule => penaltyRule.ViolationType == filterAudience);
         }
 
         penaltyRulesQuery = sortBy?.Trim().ToLower() switch
@@ -72,6 +80,8 @@ public class PenaltyRuleRepository(ApplicationDbContext context)
 
         var totalCount = await penaltyRulesQuery.LongCountAsync(cancellationToken);
 
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+
         var penaltyRuleSummaries = await penaltyRulesQuery
             .Skip((pageIndex - 1) * pageSize)
             .Take(pageSize)
@@ -80,11 +90,14 @@ public class PenaltyRuleRepository(ApplicationDbContext context)
                 Id = penaltyRule.Id,
                 RuleCode = penaltyRule.RuleCode,
                 Name = penaltyRule.Name,
+                ViolationType = penaltyRule.ViolationType,
                 FineAmount = penaltyRule.FineAmount,
                 SeverityLevel = penaltyRule.SeverityLevel,
-                Status = penaltyRule.Status,
+                Status = penaltyRule.Status == PenaltyRuleStatus.Pending && penaltyRule.EffectiveDate <= today
+                    ? PenaltyRuleStatus.Active
+                    : penaltyRule.Status,
+                EffectiveDate = penaltyRule.EffectiveDate,
                 EffectiveFrom = penaltyRule.EffectiveFrom,
-                EffectiveTo = penaltyRule.EffectiveTo,
                 Description = penaltyRule.Description,
                 ViolationsCount = Context.Violations.Count(violation => violation.PenaltyRuleId == penaltyRule.Id),
                 CreatedDate = penaltyRule.CreatedDate
@@ -105,6 +118,7 @@ public class PenaltyRuleRepository(ApplicationDbContext context)
             return null;
         }
 
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
         var appliedViolationsCount = await Context.Violations.CountAsync(violation => violation.PenaltyRuleId == penaltyRule.Id, cancellationToken);
 
         return new PenaltyRuleDetailDto
@@ -112,11 +126,14 @@ public class PenaltyRuleRepository(ApplicationDbContext context)
             Id = penaltyRule.Id,
             RuleCode = penaltyRule.RuleCode,
             Name = penaltyRule.Name,
+            ViolationType = penaltyRule.ViolationType,
             FineAmount = penaltyRule.FineAmount,
             SeverityLevel = penaltyRule.SeverityLevel,
-            Status = penaltyRule.Status,
+            Status = penaltyRule.Status == PenaltyRuleStatus.Pending && penaltyRule.EffectiveDate <= today
+                ? PenaltyRuleStatus.Active
+                : penaltyRule.Status,
+            EffectiveDate = penaltyRule.EffectiveDate,
             EffectiveFrom = penaltyRule.EffectiveFrom,
-            EffectiveTo = penaltyRule.EffectiveTo,
             Description = penaltyRule.Description,
             PreviousRuleId = penaltyRule.PreviousRuleId,
             PreviousRuleCode = penaltyRule.PreviousRule?.RuleCode,

@@ -38,7 +38,11 @@ public class CreateViolationCommandHandler(
                 Error.NotFound("Violation.PenaltyRuleNotFound", "Quy định phạt không tồn tại trong hệ thống."));
         }
 
-        if (penaltyRule.Status != PenaltyRuleStatus.Applied)
+        var isRuleActive = penaltyRule.Status == PenaltyRuleStatus.Applied ||
+                           penaltyRule.Status == PenaltyRuleStatus.Active ||
+                           (penaltyRule.Status == PenaltyRuleStatus.Pending && penaltyRule.EffectiveDate <= DateOnly.FromDateTime(DateTime.UtcNow));
+
+        if (!isRuleActive)
         {
             return Result.Failure<ViolationDetailDto>(
                 Error.Validation("Violation.PenaltyRuleNotActive", "Quy định phạt này đã ngừng áp dụng hoặc chưa được kích hoạt."));

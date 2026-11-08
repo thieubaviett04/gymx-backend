@@ -22,7 +22,8 @@ public class CreatePenaltyRuleCommandHandler(
             command.SeverityLevel,
             command.EffectiveFrom,
             command.Description,
-            command.Status);
+            command.Status,
+            violationType: command.ViolationType);
 
         await penaltyRuleRepository.AddAsync(penaltyRule, cancellationToken);
 
@@ -48,7 +49,8 @@ public class CreatePenaltyRuleCommandHandler(
                 Error.Conflict("PenaltyRule.CodeCollision", "Không thể sinh mã quy định phạt. Vui lòng thử lại."));
         }
 
-        return Result.Success(MapPenaltyRuleDetail(penaltyRule));
+        var detail = await penaltyRuleRepository.GetPenaltyRuleDetailByIdAsync(penaltyRule.Id, cancellationToken);
+        return Result.Success(detail!);
     }
 
     private static bool IsUniqueConstraintViolation(Exception ex)
@@ -58,21 +60,4 @@ public class CreatePenaltyRuleCommandHandler(
                exceptionText.Contains("duplicate key", StringComparison.OrdinalIgnoreCase) ||
                exceptionText.Contains("unique constraint", StringComparison.OrdinalIgnoreCase);
     }
-
-    private static PenaltyRuleDetailDto MapPenaltyRuleDetail(PenaltyRule rule) => new()
-    {
-        Id = rule.Id,
-        RuleCode = rule.RuleCode,
-        Name = rule.Name,
-        FineAmount = rule.FineAmount,
-        SeverityLevel = rule.SeverityLevel,
-        Status = rule.Status,
-        EffectiveFrom = rule.EffectiveFrom,
-        EffectiveTo = rule.EffectiveTo,
-        Description = rule.Description,
-        PreviousRuleId = rule.PreviousRuleId,
-        ViolationsCount = 0,
-        CreatedDate = rule.CreatedDate,
-        LastModifiedDate = rule.LastModifiedDate
-    };
 }

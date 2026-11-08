@@ -21,7 +21,7 @@ public record UpdatePackageCommand(
         req.Price,
         req.DurationMonths,
         req.EffectiveStartDate,
-        req.Status?.Trim().ToUpperInvariant(),
+        string.IsNullOrWhiteSpace(req.Status) ? GymX.Domain.Constants.PackageStatus.Active : req.Status.Trim().ToUpperInvariant(),
         string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim(),
         req.CategoryId);
 }

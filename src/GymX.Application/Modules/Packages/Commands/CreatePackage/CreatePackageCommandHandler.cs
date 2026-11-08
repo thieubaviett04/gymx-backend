@@ -58,27 +58,8 @@ public class CreatePackageCommandHandler(
             {
                 await unitOfWork.SaveChangesAsync(cancellationToken);
 
-                var resultDto = new PackageDetailDto
-                {
-                    Id = package.Id,
-                    PackageCode = package.PackageCode,
-                    Name = package.Name,
-                    Price = package.Price,
-                    DurationMonths = package.DurationMonths,
-                    DurationDays = package.DurationDays,
-                    Description = package.Description,
-                    Status = package.Status,
-                    EffectiveStartDate = package.EffectiveStartDate,
-                    CategoryId = package.CategoryId,
-                    CategoryCode = categoryCode,
-                    CategoryName = categoryName,
-                    PreviousPackageId = null,
-                    PreviousPackageCode = null,
-                    ActiveMembersCount = 0,
-                    CreatedDate = package.CreatedDate
-                };
-
-                return Result.Success(resultDto);
+                var detail = await packageRepository.GetPackageDetailByIdAsync(package.Id, cancellationToken);
+                return Result.Success(detail!);
             }
             catch (UniqueConstraintException)
             {

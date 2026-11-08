@@ -51,38 +51,7 @@ public class UpdatePackageCommandHandler(
         packageRepository.Update(package);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(await MapDetailAsync(package, cancellationToken, categoryCode: categoryCode, categoryName: categoryName));
-    }
-
-    private async Task<PackageDetailDto> MapDetailAsync(Package pkg, CancellationToken ct, string? categoryCode = null, string? categoryName = null)
-    {
-        var activeCount = await packageRepository.CountActiveMembersAsync(pkg.Id, ct);
-        if (pkg.CategoryId.HasValue && categoryCode == null)
-        {
-            var category = await packageCategoryRepository.GetByIdAsync(pkg.CategoryId.Value, ct);
-            categoryCode = category?.Code;
-            categoryName = category?.Name;
-        }
-
-        return new PackageDetailDto
-        {
-            Id = pkg.Id,
-            PackageCode = pkg.PackageCode,
-            Name = pkg.Name,
-            Price = pkg.Price,
-            DurationMonths = pkg.DurationMonths,
-            DurationDays = pkg.DurationDays,
-            Description = pkg.Description,
-            Status = pkg.Status,
-            EffectiveStartDate = pkg.EffectiveStartDate,
-            CategoryId = pkg.CategoryId,
-            CategoryCode = categoryCode,
-            CategoryName = categoryName,
-            PreviousPackageId = pkg.PreviousPackageId,
-            PreviousPackageCode = pkg.PreviousPackage?.PackageCode,
-            ActiveMembersCount = activeCount,
-            CreatedDate = pkg.CreatedDate,
-            LastModifiedDate = pkg.LastModifiedDate
-        };
+        var detail = await packageRepository.GetPackageDetailByIdAsync(package.Id, cancellationToken);
+        return Result.Success(detail!);
     }
 }

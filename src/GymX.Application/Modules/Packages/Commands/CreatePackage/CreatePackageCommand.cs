@@ -21,5 +21,5 @@ public record CreatePackageCommand(
         req.EffectiveStartDate,
         string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim(),
         req.CategoryId,
-        req.Status?.Trim().ToUpperInvariant());
+        string.IsNullOrWhiteSpace(req.Status) ? GymX.Domain.Constants.PackageStatus.Active : req.Status.Trim().ToUpperInvariant());
 }
