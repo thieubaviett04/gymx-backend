@@ -24,31 +24,13 @@ public class GetMyNotificationsQueryHandler(
         var pageIndex = request.PageIndex <= 0 ? 1 : request.PageIndex;
         var pageSize = request.PageSize <= 0 ? 20 : (request.PageSize > 100 ? 100 : request.PageSize);
 
-        var pagedNotifications = await notificationRepository.GetByUserIdAsync(
+        var result = await notificationRepository.GetByUserIdAsync(
             userId,
             request.IsRead,
             request.NotificationType,
             pageIndex,
             pageSize,
             cancellationToken);
-
-        var dtos = pagedNotifications.Items.Select(n => new NotificationDto
-        {
-            Id = n.Id,
-            UserId = n.UserId,
-            Title = n.Title,
-            Content = n.Content,
-            NotificationType = n.NotificationType,
-            IsRead = n.IsRead,
-            ReadAt = n.ReadAt,
-            CreatedDate = n.CreatedDate
-        }).ToList();
-
-        var result = new PagedResult<NotificationDto>(
-            dtos,
-            pagedNotifications.TotalCount,
-            pagedNotifications.PageIndex,
-            pagedNotifications.PageSize);
 
         return Result.Success(result);
     }

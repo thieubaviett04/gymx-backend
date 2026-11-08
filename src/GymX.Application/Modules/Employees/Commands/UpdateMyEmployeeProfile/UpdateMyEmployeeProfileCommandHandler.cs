@@ -40,15 +40,7 @@ public class UpdateMyEmployeeProfileCommandHandler(
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var employeeDto = new EmployeeProfileDto
-        {
-            EmployeeCode = employee.EmployeeCode,
-            Position = employee.Position,
-            HiredAt = employee.HiredAt,
-            NationalId = employee.NationalId,
-            EmploymentStatus = employee.EmploymentStatus
-        };
-
-        return Result.Success(employeeDto);
+        var employeeDto = await employeeRepository.GetProfileByUserIdAsync(userId, cancellationToken);
+        return Result.Success(employeeDto!);
     }
 }

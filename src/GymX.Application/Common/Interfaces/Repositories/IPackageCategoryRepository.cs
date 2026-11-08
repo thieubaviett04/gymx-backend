@@ -16,6 +16,7 @@ public interface IPackageCategoryRepository : IGenericRepository<PackageCategory
         int pageIndex,
         int pageSize,
         CancellationToken cancellationToken = default);
+    Task<PackageCategorySummaryDto?> GetSummaryByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<List<PackageCategoryLookupDto>> GetLookupAsync(CancellationToken cancellationToken = default);
 }
 
