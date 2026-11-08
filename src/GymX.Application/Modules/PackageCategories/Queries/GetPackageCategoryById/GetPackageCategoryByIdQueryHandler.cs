@@ -13,23 +13,11 @@ public class GetPackageCategoryByIdQueryHandler(IPackageCategoryRepository packa
         GetPackageCategoryByIdQuery request,
         CancellationToken cancellationToken)
     {
-        var category = await packageCategoryRepository.GetByIdAsync(request.Id, cancellationToken);
-        if (category is null || category.IsDeleted)
+        var dto = await packageCategoryRepository.GetSummaryByIdAsync(request.Id, cancellationToken);
+        if (dto is null)
         {
             return Result.Failure<PackageCategorySummaryDto>(PackageCategoryErrors.NotFound(request.Id));
         }
-
-        var dto = new PackageCategorySummaryDto
-        {
-            Id = category.Id,
-            Code = category.Code,
-            Name = category.Name,
-            Description = category.Description,
-            Status = category.Status,
-            PackagesCount = 0,
-            CreatedDate = category.CreatedDate,
-            LastModifiedDate = category.LastModifiedDate
-        };
 
         return Result.Success(dto);
     }

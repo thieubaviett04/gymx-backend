@@ -18,20 +18,11 @@ public class GetMyEmployeeProfileQueryHandler(
             return Result.Failure<EmployeeProfileDto>(Error.Unauthorized("Auth.Unauthorized", "Vui lòng đăng nhập để thực hiện thao tác này."));
         }
 
-        var employee = await employeeRepository.GetByUserIdAsync(userId, cancellationToken);
-        if (employee is null)
+        var employeeDto = await employeeRepository.GetProfileByUserIdAsync(userId, cancellationToken);
+        if (employeeDto is null)
         {
             return Result.Failure<EmployeeProfileDto>(Error.NotFound("Employee.NotFound", "Không tìm thấy hồ sơ nhân viên của bạn."));
         }
-
-        var employeeDto = new EmployeeProfileDto
-        {
-            EmployeeCode = employee.EmployeeCode,
-            Position = employee.Position,
-            HiredAt = employee.HiredAt,
-            NationalId = employee.NationalId,
-            EmploymentStatus = employee.EmploymentStatus
-        };
 
         return Result.Success(employeeDto);
     }

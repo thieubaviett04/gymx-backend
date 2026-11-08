@@ -1,3 +1,4 @@
+using GymX.Application.Modules.Notifications.DTOs;
 using GymX.Domain.Common.Models;
 using GymX.Domain.Entities.Notifications;
 
@@ -5,7 +6,7 @@ namespace GymX.Application.Common.Interfaces.Repositories;
 
 public interface INotificationRepository : IGenericRepository<Notification>
 {
-    Task<PagedResult<Notification>> GetByUserIdAsync(
+    Task<PagedResult<NotificationDto>> GetByUserIdAsync(
         Guid userId,
         bool? isRead,
         string? notificationType,

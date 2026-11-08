@@ -31,19 +31,8 @@ public class UpdatePackageCategoryCommandHandler(
         packageCategoryRepository.Update(category);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var dto = new PackageCategorySummaryDto
-        {
-            Id = category.Id,
-            Code = category.Code,
-            Name = category.Name,
-            Description = category.Description,
-            Status = category.Status,
-            PackagesCount = 0,
-            CreatedDate = category.CreatedDate,
-            LastModifiedDate = category.LastModifiedDate
-        };
-
-        return Result.Success(dto);
+        var dto = await packageCategoryRepository.GetSummaryByIdAsync(category.Id, cancellationToken);
+        return Result.Success(dto!);
     }
 }
 

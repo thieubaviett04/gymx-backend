@@ -18,4 +18,5 @@ public interface IEmployeeRepository : IGenericRepository<Employee>
         int pageSize,
         CancellationToken cancellationToken = default);
     Task<EmployeeDetailDto?> GetEmployeeDetailByIdAsync(Guid employeeId, CancellationToken cancellationToken = default);
+    Task<EmployeeProfileDto?> GetProfileByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 }

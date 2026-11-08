@@ -84,6 +84,25 @@ public class PackageCategoryRepository(ApplicationDbContext context)
         return new PagedResult<PackageCategorySummaryDto>(items, totalCount, safePageIndex, safePageSize);
     }
 
+    public Task<PackageCategorySummaryDto?> GetSummaryByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return DbSet
+            .AsNoTracking()
+            .Where(c => c.Id == id && !c.IsDeleted)
+            .Select(c => new PackageCategorySummaryDto
+            {
+                Id = c.Id,
+                Code = c.Code,
+                Name = c.Name,
+                Description = c.Description,
+                Status = c.Status,
+                PackagesCount = c.Packages.Count(p => !p.IsDeleted),
+                CreatedDate = c.CreatedDate,
+                LastModifiedDate = c.LastModifiedDate
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public Task<List<PackageCategoryLookupDto>> GetLookupAsync(CancellationToken cancellationToken = default)
     {
         return DbSet

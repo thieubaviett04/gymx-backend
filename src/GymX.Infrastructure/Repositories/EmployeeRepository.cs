@@ -12,6 +12,22 @@ public class EmployeeRepository(ApplicationDbContext context) : GenericRepositor
     public Task<Employee?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
         => DbSet.FirstOrDefaultAsync(e => e.UserId == userId && !e.IsDeleted, cancellationToken);
 
+    public Task<EmployeeProfileDto?> GetProfileByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return DbSet
+            .AsNoTracking()
+            .Where(e => e.UserId == userId && !e.IsDeleted)
+            .Select(e => new EmployeeProfileDto
+            {
+                EmployeeCode = e.EmployeeCode,
+                Position = e.Position,
+                HiredAt = e.HiredAt,
+                NationalId = e.NationalId,
+                EmploymentStatus = e.EmploymentStatus
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public Task<Employee?> GetByNationalIdAsync(string nationalId, CancellationToken cancellationToken = default)
         => DbSet.FirstOrDefaultAsync(e => e.NationalId == nationalId && !e.IsDeleted, cancellationToken);
 
