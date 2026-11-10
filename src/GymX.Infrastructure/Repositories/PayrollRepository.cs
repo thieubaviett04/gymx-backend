@@ -161,6 +161,9 @@ public class PayrollRepository(ApplicationDbContext context)
             var isHourlyRate = string.Equals(formula.BaseRateType, SalaryBaseRateType.Hourly, StringComparison.OrdinalIgnoreCase);
             var unitName = isShiftRate ? "ca" : (isHourlyRate ? "giờ" : "ngày");
 
+            var workedHours = workedShifts * 4;
+            var workedUnits = isHourlyRate ? workedHours : workedShifts;
+
             decimal calculatedBaseSalary;
             if (isShiftRate)
             {
@@ -168,7 +171,6 @@ public class PayrollRepository(ApplicationDbContext context)
             }
             else if (isHourlyRate)
             {
-                var workedHours = workedShifts * 4;
                 calculatedBaseSalary = baseSalaryRate * workedHours;
             }
             else
@@ -194,13 +196,13 @@ public class PayrollRepository(ApplicationDbContext context)
 
             violationsMap.TryGetValue(employee.Id, out var penaltyAmount);
 
-            var note = $"Công thức: {formula.Name}. Lương cứng: {calculatedBaseSalary:N0} ₫ ({workedShifts}/{formula.StandardWorkDays} {unitName}). Tiền dạy PT: {teachingAmount:N0} ₫ ({ptSessionsCount} buổi). Hoa hồng bán: {commissionAmount:N0} ₫ ({formula.SalesCommissionPercent}% của {salesRevenue:N0} ₫). Phạt: -{penaltyAmount:N0} ₫.";
+            var note = $"Công thức: {formula.Name}. Lương cứng: {calculatedBaseSalary:N0} ₫ ({workedUnits}/{formula.StandardWorkDays} {unitName}). Tiền dạy PT: {teachingAmount:N0} ₫ ({ptSessionsCount} buổi). Hoa hồng bán: {commissionAmount:N0} ₫ ({formula.SalesCommissionPercent}% của {salesRevenue:N0} ₫). Phạt: -{penaltyAmount:N0} ₫.";
 
             if (existingPayslipsMap.TryGetValue(employee.Id, out var existingPayslip))
             {
                 existingPayslip.UpdateCalculatedSalary(
                     calculatedBaseSalary,
-                    workedShifts,
+                    workedUnits,
                     lateCount,
                     earlyLeaveCount,
                     bonusAmount,
@@ -213,7 +215,7 @@ public class PayrollRepository(ApplicationDbContext context)
                     period.Id,
                     employee.Id,
                     calculatedBaseSalary,
-                    workedShifts,
+                    workedUnits,
                     lateCount,
                     earlyLeaveCount,
                     bonusAmount,
