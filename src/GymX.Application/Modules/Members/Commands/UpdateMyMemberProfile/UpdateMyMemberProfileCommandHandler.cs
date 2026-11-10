@@ -1,6 +1,6 @@
 using GymX.Application.Common.Interfaces;
 using GymX.Application.Common.Interfaces.Repositories;
-using GymX.Application.Modules.Members.DTOs;
+using GymX.Application.Modules.Members.DTOs.Response;
 using GymX.Domain.Common.Models;
 using MediatR;
 
@@ -31,19 +31,9 @@ public class UpdateMyMemberProfileCommandHandler(
             request.HealthNote
         );
         memberRepository.Update(member);
-
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var memberDto = new MemberProfileDto
-        {
-            MemberCode = member.MemberCode,
-            JoinDate = member.JoinDate,
-            EmergencyContactName = member.EmergencyContactName,
-            EmergencyContactPhone = member.EmergencyContactPhone,
-            HealthNote = member.HealthNote,
-            MemberStatus = member.MemberStatus
-        };
-
-        return Result.Success(memberDto);
+        var memberDto = await memberRepository.GetProfileByUserIdAsync(userId, cancellationToken);
+        return Result.Success(memberDto!);
     }
 }

@@ -1,0 +1,27 @@
+using GymX.Application.Modules.Packages.DTOs.Request;
+using GymX.Application.Modules.Packages.DTOs.Response;
+using GymX.Domain.Common.Models;
+using MediatR;
+
+namespace GymX.Application.Modules.Packages.Commands.UpdatePackage;
+
+public record UpdatePackageCommand(
+    Guid PackageId,
+    string Name,
+    decimal? Price,
+    int DurationMonths,
+    DateOnly EffectiveStartDate,
+    string? Status,
+    string? Description,
+    Guid? CategoryId = null) : IRequest<Result<PackageDetailDto>>
+{
+    public static UpdatePackageCommand FromRequest(Guid packageId, UpdatePackageRequest req) => new(
+        packageId,
+        req.Name.Trim(),
+        req.Price,
+        req.DurationMonths,
+        req.EffectiveStartDate,
+        string.IsNullOrWhiteSpace(req.Status) ? GymX.Domain.Constants.PackageStatus.Active : req.Status.Trim().ToUpperInvariant(),
+        string.IsNullOrWhiteSpace(req.Description) ? null : req.Description.Trim(),
+        req.CategoryId);
+}

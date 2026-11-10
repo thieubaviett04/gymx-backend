@@ -1,6 +1,6 @@
 using GymX.Application.Common.Interfaces;
 using GymX.Application.Common.Interfaces.Repositories;
-using GymX.Application.Modules.Employees.DTOs;
+using GymX.Application.Modules.Employees.DTOs.Response;
 using GymX.Domain.Common.Models;
 using MediatR;
 
@@ -40,15 +40,7 @@ public class UpdateMyEmployeeProfileCommandHandler(
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var employeeDto = new EmployeeProfileDto
-        {
-            EmployeeCode = employee.EmployeeCode,
-            Position = employee.Position,
-            HiredAt = employee.HiredAt,
-            NationalId = employee.NationalId,
-            EmploymentStatus = employee.EmploymentStatus
-        };
-
-        return Result.Success(employeeDto);
+        var employeeDto = await employeeRepository.GetProfileByUserIdAsync(userId, cancellationToken);
+        return Result.Success(employeeDto!);
     }
 }

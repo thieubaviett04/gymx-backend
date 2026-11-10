@@ -1,0 +1,124 @@
+using System.Security.Cryptography;
+using GymX.Domain.Common.Models;
+using GymX.Domain.Constants;
+using GymX.Domain.Contracts;
+
+namespace GymX.Domain.Entities.Packages;
+
+public class Package : EntityAuditBase, ISoftDelete
+{
+    public string PackageCode { get; private set; } = string.Empty;
+    public string Name { get; private set; } = string.Empty;
+    public decimal Price { get; private set; }
+    public int DurationMonths { get; private set; }
+    public int DurationDays { get; private set; }
+    public string? Description { get; private set; }
+    public string Status { get; private set; } = PackageStatus.Active;
+    public DateOnly EffectiveStartDate { get; private set; }
+
+    public Guid? CategoryId { get; private set; }
+    public virtual PackageCategory? Category { get; private set; }
+
+    public Guid? PreviousPackageId { get; private set; }
+    public virtual Package? PreviousPackage { get; private set; }
+
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedDate { get; set; }
+
+    protected Package() { }
+
+    public static string GenerateRandomCode()
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var buffer = new char[6];
+        using var rng = RandomNumberGenerator.Create();
+        var bytes = new byte[6];
+        rng.GetBytes(bytes);
+
+        for (int i = 0; i < 6; i++)
+        {
+            buffer[i] = chars[bytes[i] % chars.Length];
+        }
+
+        return new string(buffer);
+    }
+
+    public static Package Create(
+        string name,
+        decimal price,
+        int durationMonths,
+        DateOnly effectiveStartDate,
+        string? description = null,
+        string? customCode = null,
+        Guid? previousPackageId = null,
+        Guid? categoryId = null,
+        string? status = null)
+    {
+        var normalizedStatus = !string.IsNullOrWhiteSpace(status) && PackageStatus.IsValid(status)
+            ? status.Trim().ToUpperInvariant()
+            : PackageStatus.Active;
+
+        return new Package
+        {
+            PackageCode = string.IsNullOrWhiteSpace(customCode) ? GenerateRandomCode() : customCode.Trim().ToUpperInvariant(),
+            Name = name.Trim(),
+            Price = price,
+            DurationMonths = durationMonths,
+            DurationDays = durationMonths * 30,
+            Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
+            EffectiveStartDate = effectiveStartDate,
+            Status = normalizedStatus,
+            PreviousPackageId = previousPackageId,
+            CategoryId = categoryId
+        };
+    }
+
+    public void RegenerateCode(string newCode)
+    {
+        PackageCode = newCode.Trim().ToUpperInvariant();
+    }
+
+    public void UpdateInfo(
+        string name,
+        decimal price,
+        int durationMonths,
+        DateOnly effectiveStartDate,
+        string? status,
+        string? description = null,
+        Guid? categoryId = null)
+    {
+        Name = name.Trim();
+        Price = price;
+        DurationMonths = durationMonths;
+        DurationDays = durationMonths * 30;
+        Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+        EffectiveStartDate = effectiveStartDate;
+        CategoryId = categoryId;
+
+        if (!string.IsNullOrWhiteSpace(status) && PackageStatus.IsValid(status))
+        {
+            Status = status.Trim().ToUpperInvariant();
+        }
+    }
+
+    public void Deactivate()
+    {
+        Status = PackageStatus.Inactive;
+    }
+
+    public void Activate()
+    {
+        Status = PackageStatus.Active;
+    }
+
+    public void Discontinue()
+    {
+        Status = PackageStatus.Discontinued;
+    }
+
+    public void SoftDelete()
+    {
+        IsDeleted = true;
+        DeletedDate = DateTime.UtcNow;
+    }
+}

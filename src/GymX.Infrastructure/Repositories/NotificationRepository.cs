@@ -1,4 +1,5 @@
 using GymX.Application.Common.Interfaces.Repositories;
+using GymX.Application.Modules.Notifications.DTOs;
 using GymX.Domain.Common.Models;
 using GymX.Domain.Entities.Notifications;
 using GymX.Infrastructure.Persistence;
@@ -9,7 +10,7 @@ namespace GymX.Infrastructure.Repositories;
 public class NotificationRepository(ApplicationDbContext context)
     : GenericRepository<Notification>(context), INotificationRepository
 {
-    public async Task<PagedResult<Notification>> GetByUserIdAsync(
+    public async Task<PagedResult<NotificationDto>> GetByUserIdAsync(
         Guid userId,
         bool? isRead,
         string? notificationType,
@@ -35,9 +36,20 @@ public class NotificationRepository(ApplicationDbContext context)
             .OrderByDescending(n => n.CreatedDate)
             .Skip((pageIndex - 1) * pageSize)
             .Take(pageSize)
+            .Select(n => new NotificationDto
+            {
+                Id = n.Id,
+                UserId = n.UserId,
+                Title = n.Title,
+                Content = n.Content,
+                NotificationType = n.NotificationType,
+                IsRead = n.IsRead,
+                ReadAt = n.ReadAt,
+                CreatedDate = n.CreatedDate
+            })
             .ToListAsync(cancellationToken);
 
-        return new PagedResult<Notification>(items, totalCount, pageIndex, pageSize);
+        return new PagedResult<NotificationDto>(items, totalCount, pageIndex, pageSize);
     }
 
     public async Task<int> GetUnreadCountAsync(

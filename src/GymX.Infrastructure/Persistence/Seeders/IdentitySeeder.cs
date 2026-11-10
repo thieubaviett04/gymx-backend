@@ -33,15 +33,21 @@ public static class IdentitySeeder
 
             var adminRole = await context.Roles.FirstAsync(r => r.Code == "ADMIN");
             await context.UserRoles.AddAsync(UserRole.Create(adminUser.Id, adminRole.Id));
-            
-            var adminEmployee = Employee.Create(adminUser.Id, "EMP0001", "ADMIN", 20000000, DateOnly.FromDateTime(DateTime.UtcNow));
-            await context.Employees.AddAsync(adminEmployee);
-
             await context.SaveChangesAsync();
         }
         else
         {
             adminUser.UpdatePassword(BCrypt.Net.BCrypt.HashPassword("Admin@123", 11));
+            await context.SaveChangesAsync();
+        }
+
+        // Tự động dọn dẹp bản ghi employee của Admin nếu tồn tại từ các phiên seed trước đó
+        var legacyAdminEmployees = await context.Employees
+            .Where(e => e.Position == "ADMIN" || e.UserId == adminUser.Id)
+            .ToListAsync();
+        if (legacyAdminEmployees.Count != 0)
+        {
+            context.Employees.RemoveRange(legacyAdminEmployees);
             await context.SaveChangesAsync();
         }
 

@@ -17,7 +17,8 @@ namespace GymX.Infrastructure.Persistence
     public class ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
         AuditableEntityInterceptor auditableEntityInterceptor,
-        SoftDeleteInterceptor softDeleteInterceptor) : DbContext(options), IApplicationDbContext
+        SoftDeleteInterceptor softDeleteInterceptor,
+        UniqueConstraintInterceptor uniqueConstraintInterceptor) : DbContext(options), IApplicationDbContext
     {
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -26,7 +27,7 @@ namespace GymX.Infrastructure.Persistence
         }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.AddInterceptors(auditableEntityInterceptor, softDeleteInterceptor);
+            optionsBuilder.AddInterceptors(auditableEntityInterceptor, softDeleteInterceptor, uniqueConstraintInterceptor);
             base.OnConfiguring(optionsBuilder);
         }
 
@@ -42,7 +43,8 @@ namespace GymX.Infrastructure.Persistence
         public DbSet<MemberCheckin> MemberCheckins => Set<MemberCheckin>();
         public DbSet<DayTicket> DayTickets => Set<DayTicket>();
 
-        public DbSet<MembershipPackage> MembershipPackages => Set<MembershipPackage>();
+        public DbSet<PackageCategory> PackageCategories => Set<PackageCategory>();
+        public DbSet<Package> Packages => Set<Package>();
 
         public DbSet<Employee> Employees => Set<Employee>();
         public DbSet<Specialization> Specializations => Set<Specialization>();
@@ -60,6 +62,7 @@ namespace GymX.Infrastructure.Persistence
 
         public DbSet<Invoice> Invoices => Set<Invoice>();
         public DbSet<Payment> Payments => Set<Payment>();
+        public DbSet<Expense> Expenses => Set<Expense>();
 
         public DbSet<PenaltyRule> PenaltyRules => Set<PenaltyRule>();
         public DbSet<Violation> Violations => Set<Violation>();

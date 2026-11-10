@@ -22,8 +22,6 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(i => i.Subtotal).HasColumnType("numeric(12,2)");
         builder.Property(i => i.TotalAmount).HasColumnType("numeric(12,2)");
         builder.Property(i => i.Status).IsRequired().HasMaxLength(20);
-        
-        // Map CreatorId property in C# to created_by column in DB
         builder.Property(i => i.CreatorId).HasColumnName("created_by");
 
         builder.HasOne<GymX.Domain.Entities.Identity.User>()
@@ -46,5 +44,41 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.Amount).HasColumnType("numeric(12,2)");
         builder.Property(p => p.GatewayTransactionRef).HasMaxLength(100);
         builder.Property(p => p.Status).IsRequired().HasMaxLength(20);
+    }
+}
+
+public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
+{
+    public void Configure(EntityTypeBuilder<Expense> builder)
+    {
+        builder.ToTable("expenses");
+
+        builder.HasKey(e => e.Id);
+
+        builder.HasIndex(e => e.ExpenseCode)
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false");
+
+        builder.HasIndex(e => e.Category);
+        builder.HasIndex(e => e.ExpenseDate);
+        builder.HasIndex(e => e.Status);
+
+        builder.Property(e => e.ExpenseCode).IsRequired().HasMaxLength(30);
+        builder.Property(e => e.Category).IsRequired().HasMaxLength(30);
+        builder.Property(e => e.Amount).HasColumnType("numeric(14,2)").IsRequired();
+        builder.Property(e => e.ExpenseDate).IsRequired();
+        builder.Property(e => e.Description).IsRequired().HasMaxLength(500);
+        builder.Property(e => e.Status).IsRequired().HasMaxLength(20);
+        builder.Property(e => e.CancellationReason).HasMaxLength(500);
+
+        builder.HasOne<GymX.Domain.Entities.Identity.User>()
+            .WithMany()
+            .HasForeignKey(e => e.RecordedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<GymX.Domain.Entities.Identity.User>()
+            .WithMany()
+            .HasForeignKey(e => e.CancelledBy)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

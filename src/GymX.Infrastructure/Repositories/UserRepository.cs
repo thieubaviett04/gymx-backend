@@ -1,8 +1,8 @@
-﻿using GymX.Application.Common.Interfaces.Repositories;
-using GymX.Application.Modules.Employees.DTOs;
-using GymX.Application.Modules.Members.DTOs;
-using GymX.Application.Modules.Trainers.DTOs;
-using GymX.Application.Modules.Users.DTOs;
+using GymX.Application.Common.Interfaces.Repositories;
+using GymX.Application.Modules.Employees.DTOs.Response;
+using GymX.Application.Modules.Members.DTOs.Response;
+using GymX.Application.Modules.Trainers.DTOs.Response;
+using GymX.Application.Modules.Users.DTOs.Response;
 using GymX.Domain.Entities.Identity;
 using GymX.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -14,15 +14,21 @@ public class UserRepository(ApplicationDbContext context) : GenericRepository<Us
     public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         => Context.Users
         .Include(u => u.RefreshTokens)
-        .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+        .FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted, cancellationToken);
 
     public Task<User?> GetByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default)
-        => Context.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber, cancellationToken);
+        => Context.Users
+        .FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber && !u.IsDeleted, cancellationToken);
+
+    public Task<User?> GetUserWithRolesByIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        => Context.Users
+        .Include(u => u.UserRoles)
+        .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted, cancellationToken);
 
     public Task<User?> GetByGoogleIdAsync(string googleId, CancellationToken cancellationToken = default)
         => Context.Users
         .Include(u => u.RefreshTokens)
-        .FirstOrDefaultAsync(u => u.GoogleId == googleId, cancellationToken);
+        .FirstOrDefaultAsync(u => u.GoogleId == googleId && !u.IsDeleted, cancellationToken);
 
     public async Task<List<string>> GetUserRolesAsync(Guid userId, CancellationToken cancellationToken = default)
     {
@@ -38,7 +44,7 @@ public class UserRepository(ApplicationDbContext context) : GenericRepository<Us
             .AsNoTracking()
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
-            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted, cancellationToken);
 
         if (user is null) return null;
 

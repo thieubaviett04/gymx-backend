@@ -1,12 +1,17 @@
 using GymX.Domain.Common.Models;
 using GymX.Domain.Constants;
 
+using GymX.Domain.Entities.Packages;
+
 namespace GymX.Domain.Entities.Members;
 
 public class MemberPackage : EntityAuditBase
 {
     public Guid MemberId { get; private set; }
+    public virtual Member? Member { get; private set; }
+
     public Guid PackageId { get; private set; }
+    public virtual Package? Package { get; private set; }
     public decimal PriceAtPurchase { get; private set; }
     public DateOnly StartDate { get; private set; }
     public DateOnly EndDate { get; private set; }

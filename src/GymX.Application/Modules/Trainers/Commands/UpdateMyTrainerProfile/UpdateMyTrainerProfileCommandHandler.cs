@@ -1,6 +1,6 @@
 using GymX.Application.Common.Interfaces;
 using GymX.Application.Common.Interfaces.Repositories;
-using GymX.Application.Modules.Trainers.DTOs;
+using GymX.Application.Modules.Trainers.DTOs.Response;
 using GymX.Domain.Common.Models;
 using MediatR;
 

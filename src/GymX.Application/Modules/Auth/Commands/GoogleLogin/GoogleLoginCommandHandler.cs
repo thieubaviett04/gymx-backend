@@ -27,12 +27,15 @@ public class GoogleLoginCommandHandler(
             return Result.Failure<AuthTokenDto>(Error.Unauthorized("Auth.Google", "Invalid Google ID Token."));
         }
 
+        var normalizedEmail = googleUser.Email.Trim().ToLowerInvariant();
+        var normalizedFullName = googleUser.FullName.Trim();
+
         var user = await userRepository.GetByGoogleIdAsync(googleUser.GoogleId, cancellationToken);
         var isNewUser = false;
 
         if (user is null)
         {
-            user = await userRepository.GetByEmailAsync(googleUser.Email, cancellationToken);
+            user = await userRepository.GetByEmailAsync(normalizedEmail, cancellationToken);
             if (user is not null)
             {
                 return Result.Failure<AuthTokenDto>(Error.Conflict("Auth.EmailExists", "Email này đã được đăng ký bằng Mật khẩu."));
@@ -40,7 +43,7 @@ public class GoogleLoginCommandHandler(
 
             var memberRole = await roleRepository.GetByCodeAsync(RoleCode.Member, cancellationToken);
 
-            user = User.CreateWithGoogle(googleUser.Email, googleUser.FullName, googleUser.GoogleId, googleUser.AvatarUrl);
+            user = User.CreateWithGoogle(normalizedEmail, normalizedFullName, googleUser.GoogleId, googleUser.AvatarUrl);
             if (memberRole is not null)
             {
                 user.AssignRole(memberRole.Id);

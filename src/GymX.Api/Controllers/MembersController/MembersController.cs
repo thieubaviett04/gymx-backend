@@ -1,4 +1,5 @@
 using GymX.Application.Modules.Members.Commands.UpdateMyMemberProfile;
+using GymX.Application.Modules.Members.DTOs.Request;
 using GymX.Application.Modules.Members.Queries.GetMyMemberProfile;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -30,9 +31,9 @@ namespace GymX.Api.Controllers.MembersController
         }
 
         [HttpPatch("me")]
-        public async Task<IActionResult> UpdateMyMemberProfile([FromBody] UpdateMyMemberProfileCommand command, CancellationToken cancellationToken)
+        public async Task<IActionResult> UpdateMyMemberProfile([FromBody] UpdateMyMemberProfileRequest request, CancellationToken cancellationToken)
         {
-            var result = await sender.Send(command, cancellationToken);
+            var result = await sender.Send(UpdateMyMemberProfileCommand.FromRequest(request), cancellationToken);
 
             if (result.IsSuccess)
             {

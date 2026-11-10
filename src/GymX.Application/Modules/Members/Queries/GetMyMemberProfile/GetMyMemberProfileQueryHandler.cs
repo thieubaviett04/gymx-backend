@@ -1,6 +1,6 @@
 using GymX.Application.Common.Interfaces;
 using GymX.Application.Common.Interfaces.Repositories;
-using GymX.Application.Modules.Members.DTOs;
+using GymX.Application.Modules.Members.DTOs.Response;
 using GymX.Domain.Common.Models;
 using MediatR;
 
@@ -18,21 +18,11 @@ public class GetMyMemberProfileQueryHandler(
             return Result.Failure<MemberProfileDto>(Error.Unauthorized("Auth.Unauthorized", "Vui lòng đăng nhập để thực hiện thao tác này."));
         }
 
-        var member = await memberRepository.GetByUserIdAsync(userId, cancellationToken);
-        if (member is null)
+        var memberDto = await memberRepository.GetProfileByUserIdAsync(userId, cancellationToken);
+        if (memberDto is null)
         {
             return Result.Failure<MemberProfileDto>(Error.NotFound("Member.NotFound", "Không tìm thấy hồ sơ hội viên của bạn."));
         }
-
-        var memberDto = new MemberProfileDto
-        {
-            MemberCode = member.MemberCode,
-            JoinDate = member.JoinDate,
-            EmergencyContactName = member.EmergencyContactName,
-            EmergencyContactPhone = member.EmergencyContactPhone,
-            HealthNote = member.HealthNote,
-            MemberStatus = member.MemberStatus
-        };
 
         return Result.Success(memberDto);
     }

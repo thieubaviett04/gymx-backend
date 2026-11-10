@@ -11,8 +11,12 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.ToTable("employees");
         
         builder.HasIndex(e => e.UserId).IsUnique();
-        builder.HasIndex(e => e.EmployeeCode).IsUnique();
-        builder.HasIndex(e => e.NationalId).IsUnique();
+        builder.HasIndex(e => e.EmployeeCode)
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false");
+        builder.HasIndex(e => e.NationalId)
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false");
         builder.HasIndex(e => e.Position);
 
         builder.Property(e => e.EmployeeCode).IsRequired().HasMaxLength(20);
@@ -49,7 +53,7 @@ public class TrainerConfiguration : IEntityTypeConfiguration<Trainer>
         
         builder.HasIndex(t => t.EmployeeId).IsUnique();
         
-        builder.Property(t => t.SalaryCoefficient).HasColumnType("numeric(5,2)");
+        builder.Property(t => t.PricePerSession).IsRequired().HasColumnType("numeric(12,2)").HasDefaultValue(0);
         builder.Property(t => t.RatingAvg).HasColumnType("numeric(3,2)");
 
         builder.HasOne<Employee>()

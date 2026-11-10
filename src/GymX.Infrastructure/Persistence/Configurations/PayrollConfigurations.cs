@@ -10,11 +10,24 @@ public class PenaltyRuleConfiguration : IEntityTypeConfiguration<PenaltyRule>
     {
         builder.ToTable("penalty_rules");
 
-        builder.Property(r => r.Name).IsRequired().HasMaxLength(150);
-        builder.Property(r => r.ViolationType).IsRequired().HasMaxLength(50);
-        builder.Property(r => r.FineAmount).HasColumnType("numeric(12,2)");
-        builder.Property(r => r.SeverityLevel).HasMaxLength(20);
-        builder.Property(r => r.Status).IsRequired().HasMaxLength(20);
+        builder.HasIndex(rule => rule.RuleCode)
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false");
+
+        builder.Property(rule => rule.RuleCode).IsRequired().HasMaxLength(10);
+        builder.Property(rule => rule.Name).IsRequired().HasMaxLength(150);
+        builder.Property(rule => rule.ViolationType).IsRequired().HasMaxLength(50);
+        builder.Property(rule => rule.FineAmount).HasColumnType("numeric(12,2)");
+        builder.Property(rule => rule.SeverityLevel).IsRequired().HasMaxLength(20);
+        builder.Property(rule => rule.Status).IsRequired().HasMaxLength(20);
+        builder.Property(rule => rule.EffectiveFrom).HasColumnType("timestamp with time zone").IsRequired();
+        builder.Property(rule => rule.EffectiveTo).HasColumnType("timestamp with time zone");
+        builder.Property(rule => rule.EffectiveDate).HasColumnType("date");
+
+        builder.HasOne(rule => rule.PreviousRule)
+            .WithMany()
+            .HasForeignKey(rule => rule.PreviousRuleId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -24,11 +37,49 @@ public class ViolationConfiguration : IEntityTypeConfiguration<Violation>
     {
         builder.ToTable("violations");
 
+        builder.HasIndex(v => v.ViolationCode)
+            .IsUnique();
+
+        builder.Property(v => v.ViolationCode)
+            .IsRequired()
+            .HasMaxLength(30);
+
+        builder.Property(v => v.FineAmount)
+            .HasColumnType("numeric(12,2)");
+
+        builder.Property(v => v.Status)
+            .IsRequired()
+            .HasMaxLength(20);
+
+        builder.Property(v => v.EvidenceUrl)
+            .HasMaxLength(1000);
+
+        builder.Property(v => v.CancellationReason)
+            .HasMaxLength(500);
+
+        builder.Property(v => v.Note)
+            .HasMaxLength(1000);
+
         builder.HasIndex(v => v.EmployeeId);
         builder.HasIndex(v => v.PenaltyRuleId);
         builder.HasIndex(v => v.AttendanceRecordId);
+        builder.HasIndex(v => new { v.EmployeeId, v.OccurredAt });
+        builder.HasIndex(v => v.Status);
 
-        builder.Property(v => v.FineAmount).HasColumnType("numeric(12,2)");
+        builder.HasOne(v => v.Employee)
+            .WithMany()
+            .HasForeignKey(v => v.EmployeeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(v => v.PenaltyRule)
+            .WithMany()
+            .HasForeignKey(v => v.PenaltyRuleId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(v => v.AttendanceRecord)
+            .WithMany()
+            .HasForeignKey(v => v.AttendanceRecordId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
 
@@ -38,12 +89,24 @@ public class SalaryFormulaConfiguration : IEntityTypeConfiguration<SalaryFormula
     {
         builder.ToTable("salary_formulas");
 
-        builder.Property(f => f.Name).IsRequired().HasMaxLength(100);
+        builder.HasIndex(f => f.Name)
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false");
+
+        builder.HasIndex(f => f.TargetRole);
+        builder.HasIndex(f => f.Status);
+        builder.HasIndex(f => f.EffectiveDate);
+
+        builder.Property(f => f.Name).IsRequired().HasMaxLength(150);
+        builder.Property(f => f.TargetRole).IsRequired().HasMaxLength(30);
         builder.Property(f => f.BaseRateType).IsRequired().HasMaxLength(20);
-        builder.Property(f => f.BaseRate).HasColumnType("numeric(12,2)");
+        builder.Property(f => f.BaseRate).HasColumnType("numeric(12,2)").IsRequired();
+        builder.Property(f => f.StandardWorkDays).IsRequired().HasDefaultValue(26);
+        builder.Property(f => f.PricePerPtSession).HasColumnType("numeric(12,2)").HasDefaultValue(0);
+        builder.Property(f => f.SalesCommissionPercent).HasColumnType("numeric(5,2)").HasDefaultValue(0);
+        builder.Property(f => f.EffectiveDate).IsRequired();
         builder.Property(f => f.Status).IsRequired().HasMaxLength(20);
-        
-        // Map CreatorId property in C# to created_by column in DB
+        builder.Property(f => f.Description).HasMaxLength(500);
         builder.Property(f => f.CreatorId).HasColumnName("created_by");
     }
 }
