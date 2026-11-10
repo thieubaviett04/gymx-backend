@@ -13,6 +13,12 @@ public static class FinanceSeeder
         var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Email == "admin@gymx.vn");
         var adminId = adminUser?.Id ?? Guid.NewGuid();
 
+        var trainerUser = await context.Users.FirstOrDefaultAsync(u => u.Email == "trainer@gymx.vn");
+        var trainerId = trainerUser?.Id ?? adminId;
+
+        var recUser = await context.Users.FirstOrDefaultAsync(u => u.Email == "receptionist@gymx.vn");
+        var recId = recUser?.Id ?? adminId;
+
         var nowVn = DateTime.UtcNow.AddHours(7);
         var todayVn = DateOnly.FromDateTime(nowVn);
 
@@ -22,9 +28,9 @@ public static class FinanceSeeder
                 "Chính sách lương Huấn luyện viên 2026",
                 "TRAINER",
                 SalaryBaseRateType.Monthly,
-                15000000m,
+                5000000m,
                 26,
-                200000m,
+                100000m,
                 10.0m,
                 todayVn.AddMonths(-2),
                 adminId,
@@ -34,15 +40,51 @@ public static class FinanceSeeder
                 "Chính sách lương Lễ tân 2026",
                 "RECEPTIONIST",
                 SalaryBaseRateType.Monthly,
-                10000000m,
-                26,
+                6500000m,
                 26,
                 0m,
+                3.0m,
                 todayVn.AddMonths(-2),
                 adminId,
                 "Áp dụng cho nhân viên lễ tân trực sảnh và tư vấn dịch vụ");
 
             await context.SalaryFormulas.AddRangeAsync(trainerFormula, receptionistFormula);
+            await context.SaveChangesAsync();
+        }
+        else
+        {
+            var existingTrainerFormula = await context.SalaryFormulas
+                .FirstOrDefaultAsync(f => f.TargetRole == "TRAINER" && f.Status == EmployeeStatus.Active);
+            if (existingTrainerFormula != null && existingTrainerFormula.BaseRate > 5000000m)
+            {
+                existingTrainerFormula.Update(
+                    existingTrainerFormula.Name,
+                    existingTrainerFormula.TargetRole,
+                    existingTrainerFormula.BaseRateType,
+                    5000000m,
+                    existingTrainerFormula.StandardWorkDays,
+                    100000m,
+                    10.0m,
+                    existingTrainerFormula.EffectiveDate,
+                    "Áp dụng cho toàn bộ HLV cá nhân (PT) làm việc chính thức tại cơ sở");
+            }
+
+            var existingRecFormula = await context.SalaryFormulas
+                .FirstOrDefaultAsync(f => f.TargetRole == "RECEPTIONIST" && f.Status == EmployeeStatus.Active);
+            if (existingRecFormula != null && (existingRecFormula.BaseRate > 6500000m || existingRecFormula.SalesCommissionPercent == 0m))
+            {
+                existingRecFormula.Update(
+                    existingRecFormula.Name,
+                    existingRecFormula.TargetRole,
+                    existingRecFormula.BaseRateType,
+                    6500000m,
+                    existingRecFormula.StandardWorkDays,
+                    0m,
+                    3.0m,
+                    existingRecFormula.EffectiveDate,
+                    "Áp dụng cho nhân viên lễ tân trực sảnh và tư vấn dịch vụ");
+            }
+
             await context.SaveChangesAsync();
         }
 
@@ -103,6 +145,8 @@ public static class FinanceSeeder
             foreach (var slot in todaySlots)
             {
                 var perInvoice = Math.Round(slot.Total / slot.Count, 0);
+                var invoiceCreatorId = slot.RefType == "PT_SESSION" ? trainerId : recId;
+
                 for (var i = 0; i < slot.Count; i++)
                 {
                     var issuedAtUtc = todayBaseUtc.AddHours(slot.Hour).AddMinutes(10 * (i + 1));
@@ -119,7 +163,7 @@ public static class FinanceSeeder
                         null,
                         slot.Name,
                         "0987654321",
-                        adminId));
+                        invoiceCreatorId));
                 }
             }
 
@@ -133,6 +177,7 @@ public static class FinanceSeeder
                     var hour = 8 + t * 4;
                     var amount = 500000m + (t * 250000m);
                     var refType = t % 2 == 0 ? "PACKAGE" : "PT_SESSION";
+                    var pastCreatorId = refType == "PT_SESSION" ? trainerId : recId;
                     var issuedAtUtc = pastBaseUtc.AddHours(hour).AddMinutes(15);
                     var invoiceNumber = $"INV-{pastDate:yyyyMMdd}-{seq:D4}";
                     seq++;
@@ -147,7 +192,7 @@ public static class FinanceSeeder
                         null,
                         "Hội viên GymX",
                         "0912345678",
-                        adminId));
+                        pastCreatorId));
                 }
             }
 
@@ -168,12 +213,27 @@ public static class FinanceSeeder
                     null,
                     "Hội viên tháng trước",
                     "0909090909",
-                    adminId));
+                    recId));
             }
 
             await context.Invoices.AddRangeAsync(invoices);
             await context.SaveChangesAsync();
         }
+        else if (adminUser != null)
+        {
+            var unassignedInvoices = await context.Invoices
+                .Where(i => i.CreatorId == adminUser.Id || i.CreatorId == null)
+                .ToListAsync();
+
+            if (unassignedInvoices.Count > 0)
+            {
+                foreach (var inv in unassignedInvoices)
+                {
+                    var targetCreator = inv.ReferenceType == "PT_SESSION" ? trainerId : recId;
+                    inv.AssignCreator(targetCreator);
+                }
+                await context.SaveChangesAsync();
+            }
+        }
     }
 }
-

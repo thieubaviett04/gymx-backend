@@ -77,4 +77,9 @@ public class Invoice : EntityAuditBase
     {
         Status = InvoiceStatus.Cancelled;
     }
+
+    public void AssignCreator(Guid creatorId)
+    {
+        CreatorId = creatorId;
+    }
 }

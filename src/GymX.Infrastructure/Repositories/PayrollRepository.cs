@@ -121,6 +121,18 @@ public class PayrollRepository(ApplicationDbContext context)
             .Select(g => new { EmployeeId = g.Key, TotalFine = g.Sum(v => v.FineAmount) })
             .ToDictionaryAsync(x => x.EmployeeId, x => x.TotalFine, cancellationToken);
 
+        var employeeUserIds = activeEmployees.Select(e => e.UserId).Distinct().ToList();
+        var salesRevenueMap = await Context.Invoices
+            .AsNoTracking()
+            .Where(i => i.CreatorId != null &&
+                        employeeUserIds.Contains(i.CreatorId.Value) &&
+                        i.Status == InvoiceStatus.Paid &&
+                        i.IssuedAt >= periodStartUtc &&
+                        i.IssuedAt <= periodEndUtc)
+            .GroupBy(i => i.CreatorId!.Value)
+            .Select(g => new { UserId = g.Key, TotalRevenue = g.Sum(i => i.TotalAmount) })
+            .ToDictionaryAsync(x => x.UserId, x => x.TotalRevenue, cancellationToken);
+
         var roleFormulas = await Context.SalaryFormulas
             .AsNoTracking()
             .Where(f => f.Status == EmployeeStatus.Active && f.EffectiveDate <= periodEnd)
@@ -162,11 +174,18 @@ public class PayrollRepository(ApplicationDbContext context)
                 completedSessionsMap.TryGetValue(trainerId, out ptSessionsCount);
             }
 
-            var bonusAmount = ptSessionsCount * formula.PricePerPtSession;
+            var teachingAmount = ptSessionsCount * formula.PricePerPtSession;
+
+            salesRevenueMap.TryGetValue(employee.UserId, out var salesRevenue);
+            var commissionAmount = formula.SalesCommissionPercent > 0
+                ? Math.Round(salesRevenue * (formula.SalesCommissionPercent / 100m), 2)
+                : 0m;
+
+            var bonusAmount = teachingAmount + commissionAmount;
 
             violationsMap.TryGetValue(employee.Id, out var penaltyAmount);
 
-            var note = $"Công thức: {formula.Name}. Số ca: {workedShifts}/{formula.StandardWorkDays}. PT: {ptSessionsCount} buổi.";
+            var note = $"Công thức: {formula.Name}. Lương cứng: {calculatedBaseSalary:N0} ₫ ({workedShifts}/{formula.StandardWorkDays} ngày). Tiền dạy PT: {teachingAmount:N0} ₫ ({ptSessionsCount} buổi). Hoa hồng bán: {commissionAmount:N0} ₫ ({formula.SalesCommissionPercent}% của {salesRevenue:N0} ₫). Phạt: -{penaltyAmount:N0} ₫.";
 
             if (existingPayslipsMap.TryGetValue(employee.Id, out var existingPayslip))
             {

@@ -63,13 +63,18 @@ public static class IdentitySeeder
             var recRole = await context.Roles.FirstAsync(r => r.Code == "RECEPTIONIST");
             await context.UserRoles.AddAsync(UserRole.Create(recUser.Id, recRole.Id));
 
-            var recEmployee = Employee.Create(recUser.Id, "EMP0002", "RECEPTIONIST", 10000000, DateOnly.FromDateTime(DateTime.UtcNow));
+            var recEmployee = Employee.Create(recUser.Id, "EMP0002", "RECEPTIONIST", 6500000m, DateOnly.FromDateTime(DateTime.UtcNow));
             await context.Employees.AddAsync(recEmployee);
             await context.SaveChangesAsync();
         }
         else
         {
             recUser.UpdatePassword(BCrypt.Net.BCrypt.HashPassword("Receptionist@123", 11));
+            var recEmp = await context.Employees.FirstOrDefaultAsync(e => e.UserId == recUser.Id && !e.IsDeleted);
+            if (recEmp != null && recEmp.BaseSalaryRate > 6500000m)
+            {
+                recEmp.UpdateInfo(recEmp.Position, 6500000m);
+            }
             await context.SaveChangesAsync();
         }
 
@@ -85,13 +90,18 @@ public static class IdentitySeeder
             var trainerRole = await context.Roles.FirstAsync(r => r.Code == "TRAINER");
             await context.UserRoles.AddAsync(UserRole.Create(trainerUser.Id, trainerRole.Id));
 
-            var trainerEmployee = Employee.Create(trainerUser.Id, "EMP0003", "TRAINER", 15000000, DateOnly.FromDateTime(DateTime.UtcNow));
+            var trainerEmployee = Employee.Create(trainerUser.Id, "EMP0003", "TRAINER", 5000000m, DateOnly.FromDateTime(DateTime.UtcNow));
             await context.Employees.AddAsync(trainerEmployee);
             await context.SaveChangesAsync();
         }
         else
         {
             trainerUser.UpdatePassword(BCrypt.Net.BCrypt.HashPassword("Trainer@123", 11));
+            var trainerEmp = await context.Employees.FirstOrDefaultAsync(e => e.UserId == trainerUser.Id && !e.IsDeleted);
+            if (trainerEmp != null && trainerEmp.BaseSalaryRate > 5000000m)
+            {
+                trainerEmp.UpdateInfo(trainerEmp.Position, 5000000m);
+            }
             await context.SaveChangesAsync();
         }
 
