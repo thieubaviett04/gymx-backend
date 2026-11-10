@@ -21,6 +21,9 @@ public static class ApplicationDbContextSeed
             await IdentitySeeder.SeedAsync(context);
             logger.LogInformation("- Đã seed xong Identity (Roles, Admin User).");
 
+            await FinanceSeeder.SeedAsync(context);
+            logger.LogInformation("- Đã seed xong Dữ liệu mẫu Tài chính & Doanh thu (Invoices, Expenses, Formulas).");
+
             logger.LogInformation("Quá trình Seed dữ liệu hoàn tất!");
         }
         catch (Exception ex)

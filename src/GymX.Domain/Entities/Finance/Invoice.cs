@@ -38,6 +38,35 @@ public class Invoice : EntityAuditBase
         };
     }
 
+    public static Invoice CreatePaid(
+        string invoiceNumber,
+        string referenceType,
+        Guid referenceId,
+        decimal subtotal,
+        decimal totalAmount,
+        DateTime issuedAt,
+        Guid? memberId = null,
+        string? customerName = null,
+        string? customerPhone = null,
+        Guid? creatorId = null)
+    {
+        return new Invoice
+        {
+            InvoiceNumber = invoiceNumber,
+            ReferenceType = referenceType,
+            ReferenceId = referenceId,
+            Subtotal = subtotal,
+            TotalAmount = totalAmount,
+            MemberId = memberId,
+            CustomerName = customerName,
+            CustomerPhone = customerPhone,
+            CreatorId = creatorId,
+            IssuedAt = issuedAt,
+            PaidAt = issuedAt,
+            Status = InvoiceStatus.Paid
+        };
+    }
+
     public void MarkAsPaid()
     {
         Status = InvoiceStatus.Paid;
