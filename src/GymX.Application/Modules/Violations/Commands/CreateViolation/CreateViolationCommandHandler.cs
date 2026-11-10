@@ -1,8 +1,10 @@
+using GymX.Application.Common.Exceptions;
 using GymX.Application.Common.Interfaces;
 using GymX.Application.Common.Interfaces.Repositories;
 using GymX.Application.Modules.Violations.DTOs.Response;
 using GymX.Domain.Common.Models;
 using GymX.Domain.Constants;
+using GymX.Domain.Constants.Identity;
 using GymX.Domain.Entities.Payroll;
 using MediatR;
 
@@ -38,14 +40,45 @@ public class CreateViolationCommandHandler(
                 Error.NotFound("Violation.PenaltyRuleNotFound", "Quy định phạt không tồn tại trong hệ thống."));
         }
 
-        var isRuleActive = penaltyRule.Status == PenaltyRuleStatus.Applied ||
-                           penaltyRule.Status == PenaltyRuleStatus.Active ||
-                           (penaltyRule.Status == PenaltyRuleStatus.Pending && penaltyRule.EffectiveDate <= DateOnly.FromDateTime(DateTime.UtcNow));
+        var todayVn = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+        var isRuleActive = penaltyRule.Status == PenaltyRuleStatus.Active ||
+                           (penaltyRule.Status == PenaltyRuleStatus.Pending && penaltyRule.EffectiveDate <= todayVn);
 
         if (!isRuleActive)
         {
             return Result.Failure<ViolationDetailDto>(
                 Error.Validation("Violation.PenaltyRuleNotActive", "Quy định phạt này đã ngừng áp dụng hoặc chưa được kích hoạt."));
+        }
+
+        var occurredAtVn = command.OccurredAt.Kind == DateTimeKind.Utc
+            ? command.OccurredAt.AddHours(7)
+            : command.OccurredAt;
+        var occurredDate = DateOnly.FromDateTime(occurredAtVn);
+
+        if (occurredDate < penaltyRule.EffectiveDate)
+        {
+            return Result.Failure<ViolationDetailDto>(
+                Error.Validation("Violation.OccurredBeforeRuleEffectiveDate", "Thời gian vi phạm không được xảy ra trước ngày quy định bắt đầu có hiệu lực."));
+        }
+
+        var isTrainer = string.Equals(employee.Position, RoleCode.Trainer, StringComparison.OrdinalIgnoreCase);
+
+        if (string.Equals(penaltyRule.ViolationType, RuleTargetAudience.Member, StringComparison.OrdinalIgnoreCase))
+        {
+            return Result.Failure<ViolationDetailDto>(
+                Error.Validation("Violation.TargetAudienceMismatch", "Quy định này chỉ áp dụng cho hội viên, không áp dụng cho nhân viên."));
+        }
+
+        if (isTrainer && string.Equals(penaltyRule.ViolationType, RuleTargetAudience.Staff, StringComparison.OrdinalIgnoreCase))
+        {
+            return Result.Failure<ViolationDetailDto>(
+                Error.Validation("Violation.TargetAudienceMismatch", "Quy định phạt này chỉ áp dụng cho nhân viên lễ tân, không áp dụng cho huấn luyện viên."));
+        }
+
+        if (!isTrainer && string.Equals(penaltyRule.ViolationType, RuleTargetAudience.Trainer, StringComparison.OrdinalIgnoreCase))
+        {
+            return Result.Failure<ViolationDetailDto>(
+                Error.Validation("Violation.TargetAudienceMismatch", "Quy định phạt này chỉ áp dụng cho huấn luyện viên, không áp dụng cho nhân viên lễ tân."));
         }
 
         var isPayrollPeriodClosed = await violationRepository.IsDateInClosedPayrollPeriodAsync(command.OccurredAt, cancellationToken);
@@ -79,20 +112,12 @@ public class CreateViolationCommandHandler(
                 var createdViolationDetail = await violationRepository.GetViolationDetailByIdAsync(newViolation.Id, cancellationToken);
                 return Result.Success(createdViolationDetail!);
             }
-            catch (Exception exception) when (IsUniqueConstraintViolation(exception) && attempt < MaxRetryCount)
+            catch (UniqueConstraintException) when (attempt < MaxRetryCount)
             {
             }
         }
 
         return Result.Failure<ViolationDetailDto>(
             Error.Conflict("Violation.CodeGenerationFailed", "Không thể sinh mã biên bản vi phạm do xung đột dữ liệu. Vui lòng thử lại."));
-    }
-
-    private static bool IsUniqueConstraintViolation(Exception exception)
-    {
-        var exceptionMessage = exception.ToString();
-        return exceptionMessage.Contains("23505") ||
-               exceptionMessage.Contains("duplicate key", StringComparison.OrdinalIgnoreCase) ||
-               exceptionMessage.Contains("unique constraint", StringComparison.OrdinalIgnoreCase);
     }
 }

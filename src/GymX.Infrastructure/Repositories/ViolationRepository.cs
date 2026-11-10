@@ -201,7 +201,7 @@ public class ViolationRepository(ApplicationDbContext context)
 
     public async Task<List<EmployeeLookupDto>> GetEmployeesForViolationLookupAsync(string? search, CancellationToken cancellationToken = default)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
 
         var employeeQuery = from employee in Context.Employees.AsNoTracking()
                              join user in Context.Users.AsNoTracking() on employee.UserId equals user.Id

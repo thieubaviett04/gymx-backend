@@ -1,3 +1,4 @@
+using GymX.Application.Common.Exceptions;
 using GymX.Application.Common.Interfaces;
 using GymX.Application.Common.Interfaces.Authencation;
 using GymX.Application.Common.Interfaces.Repositories;
@@ -79,7 +80,15 @@ public class CreateEmployeeCommandHandler(
             await trainerRepository.AddAsync(trainer, cancellationToken);
         }
 
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (UniqueConstraintException)
+        {
+            return Result.Failure<EmployeeDetailDto>(
+                Error.Conflict("Employee.CodeCollision", "Không thể tạo tài khoản nhân viên do xung đột dữ liệu duy nhất. Vui lòng thử lại."));
+        }
 
         var emailSubject = "Chào mừng bạn đến với GymFitness - Thông tin tài khoản nhân viên";
         var emailBody = EmailTemplates.BuildEmployeeWelcomeEmail(

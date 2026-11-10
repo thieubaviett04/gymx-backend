@@ -5,6 +5,7 @@ using GymX.Application.Modules.PenaltyRules.Commands.UpdatePenaltyRule;
 using GymX.Application.Modules.PenaltyRules.DTOs.Request;
 using GymX.Application.Modules.PenaltyRules.Queries.GetPenaltyRuleById;
 using GymX.Application.Modules.PenaltyRules.Queries.GetPenaltyRules;
+using GymX.Application.Modules.PenaltyRules.Queries.GetPenaltyRulesLookup;
 using GymX.Domain.Constants.Identity;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -38,6 +39,15 @@ public class PenaltyRulesController(ISender sender) : ControllerBase
         }
 
         return BadRequest(new { error = result.Error });
+    }
+
+    [HttpGet("lookup")]
+    public async Task<IActionResult> GetPenaltyRulesLookup(
+        [FromQuery] string? targetAudience,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await sender.Send(new GetPenaltyRulesLookupQuery(targetAudience), cancellationToken);
+        return Ok(new { success = true, data = result.Value });
     }
 
     [HttpGet("{id:guid}")]
