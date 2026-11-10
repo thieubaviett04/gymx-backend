@@ -94,6 +94,7 @@ public class FinancialAnalyticsRepository(ApplicationDbContext context) : IFinan
 
         return new RevenueAnalyticsDto
         {
+            HasData = totalTransactions > 0 || totalExpense > 0,
             Summary = summary,
             ChartData = chartData,
             CategoryBreakdown = categoryBreakdown
@@ -326,7 +327,11 @@ public class FinancialAnalyticsRepository(ApplicationDbContext context) : IFinan
         decimal totalRevenue)
     {
         var categoryGroups = invoices
-            .GroupBy(i => ((string)i.ReferenceType).ToUpperInvariant())
+            .GroupBy(i =>
+            {
+                var refType = (string?)i.ReferenceType;
+                return string.IsNullOrWhiteSpace(refType) ? "OTHER" : refType.Trim().ToUpperInvariant();
+            })
             .Select(group =>
             {
                 var categoryName = group.Key switch
@@ -335,7 +340,7 @@ public class FinancialAnalyticsRepository(ApplicationDbContext context) : IFinan
                     "PT_SESSION" => "Huấn luyện viên kèm riêng (PT)",
                     "DAY_TICKET" => "Vé tập vãng lai theo ngày",
                     "GENERAL" => "Dịch vụ phòng tập chung",
-                    _ => string.IsNullOrWhiteSpace(group.Key) ? "Nguồn thu khác" : group.Key
+                    _ => group.Key
                 };
 
                 var revenue = group.Sum(x => (decimal)x.TotalAmount);
@@ -350,16 +355,6 @@ public class FinancialAnalyticsRepository(ApplicationDbContext context) : IFinan
             })
             .OrderByDescending(x => x.Revenue)
             .ToList();
-
-        if (categoryGroups.Count == 0)
-        {
-            categoryGroups.Add(new CategoryBreakdownDto
-            {
-                CategoryName = "Chưa có dữ liệu",
-                Revenue = 0m,
-                Percentage = 0.0
-            });
-        }
 
         return categoryGroups;
     }
