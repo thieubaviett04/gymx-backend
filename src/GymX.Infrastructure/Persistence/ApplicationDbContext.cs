@@ -62,6 +62,7 @@ namespace GymX.Infrastructure.Persistence
 
         public DbSet<Invoice> Invoices => Set<Invoice>();
         public DbSet<Payment> Payments => Set<Payment>();
+        public DbSet<Expense> Expenses => Set<Expense>();
 
         public DbSet<PenaltyRule> PenaltyRules => Set<PenaltyRule>();
         public DbSet<Violation> Violations => Set<Violation>();
