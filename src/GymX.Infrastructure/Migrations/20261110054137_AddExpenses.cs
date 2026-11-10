@@ -60,8 +60,7 @@ namespace GymX.Infrastructure.Migrations
                 name: "IX_expenses_ExpenseCode",
                 table: "expenses",
                 column: "ExpenseCode",
-                unique: true,
-                filter: "\"IsDeleted\" = false");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_expenses_ExpenseDate",

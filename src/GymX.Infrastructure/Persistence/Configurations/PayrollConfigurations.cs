@@ -90,8 +90,7 @@ public class SalaryFormulaConfiguration : IEntityTypeConfiguration<SalaryFormula
         builder.ToTable("salary_formulas");
 
         builder.HasIndex(f => f.Name)
-            .IsUnique()
-            .HasFilter("\"IsDeleted\" = false");
+            .IsUnique();
 
         builder.HasIndex(f => f.TargetRole);
         builder.HasIndex(f => f.Status);
