@@ -1,3 +1,4 @@
+using GymX.Application.Common.Exceptions;
 using GymX.Application.Common.Interfaces;
 using GymX.Application.Common.Interfaces.Repositories;
 using GymX.Application.Modules.PenaltyRules.DTOs.Response;
@@ -36,7 +37,7 @@ public class CreatePenaltyRuleCommandHandler(
                 saveSucceeded = true;
                 break;
             }
-            catch (Exception ex) when (IsUniqueConstraintViolation(ex) && attempt < MaxSaveRetries)
+            catch (UniqueConstraintException) when (attempt < MaxSaveRetries)
             {
                 var newGeneratedCode = PenaltyRule.GenerateRandomCode();
                 penaltyRule.RegenerateCode(newGeneratedCode);
@@ -51,13 +52,5 @@ public class CreatePenaltyRuleCommandHandler(
 
         var detail = await penaltyRuleRepository.GetPenaltyRuleDetailByIdAsync(penaltyRule.Id, cancellationToken);
         return Result.Success(detail!);
-    }
-
-    private static bool IsUniqueConstraintViolation(Exception ex)
-    {
-        var exceptionText = ex.ToString();
-        return exceptionText.Contains("23505") ||
-               exceptionText.Contains("duplicate key", StringComparison.OrdinalIgnoreCase) ||
-               exceptionText.Contains("unique constraint", StringComparison.OrdinalIgnoreCase);
     }
 }

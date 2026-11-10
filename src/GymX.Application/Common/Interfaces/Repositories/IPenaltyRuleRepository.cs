@@ -20,4 +20,5 @@ public interface IPenaltyRuleRepository : IGenericRepository<PenaltyRule>
         int pageSize,
         CancellationToken cancellationToken = default);
     Task<PenaltyRuleDetailDto?> GetPenaltyRuleDetailByIdAsync(Guid ruleId, CancellationToken cancellationToken = default);
+    Task<List<PenaltyRuleLookupDto>> GetLookupAsync(string? targetAudience = null, CancellationToken cancellationToken = default);
 }

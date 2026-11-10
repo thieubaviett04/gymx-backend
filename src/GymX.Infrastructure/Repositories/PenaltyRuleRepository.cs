@@ -142,4 +142,35 @@ public class PenaltyRuleRepository(ApplicationDbContext context)
             LastModifiedDate = penaltyRule.LastModifiedDate
         };
     }
+
+    public async Task<List<PenaltyRuleLookupDto>> GetLookupAsync(string? targetAudience = null, CancellationToken cancellationToken = default)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+
+        var query = DbSet
+            .AsNoTracking()
+            .Where(rule => !rule.IsDeleted &&
+                (rule.Status == PenaltyRuleStatus.Active ||
+                (rule.Status == PenaltyRuleStatus.Pending && rule.EffectiveDate <= today)));
+
+        if (!string.IsNullOrWhiteSpace(targetAudience) && targetAudience.Trim().ToUpperInvariant() != "ALL")
+        {
+            var filterAudience = targetAudience.Trim().ToUpperInvariant();
+            query = query.Where(rule => rule.ViolationType == filterAudience || rule.ViolationType == RuleTargetAudience.General);
+        }
+
+        return await query
+            .OrderBy(rule => rule.Name)
+            .Select(rule => new PenaltyRuleLookupDto(
+                rule.Id,
+                rule.RuleCode,
+                rule.Name,
+                rule.FineAmount,
+                rule.SeverityLevel,
+                rule.ViolationType,
+                rule.EffectiveDate,
+                rule.Description
+            ))
+            .ToListAsync(cancellationToken);
+    }
 }

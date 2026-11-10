@@ -14,7 +14,12 @@ public class CreateViolationCommandValidator : AbstractValidator<CreateViolation
 
         RuleFor(x => x.OccurredAt)
             .NotEmpty().WithMessage("Thời gian vi phạm không được để trống.")
-            .Must(date => date <= DateTime.UtcNow.AddMinutes(5))
+            .Must(date =>
+            {
+                var nowUtc = DateTime.UtcNow.AddMinutes(5);
+                var dateUtc = date.Kind == DateTimeKind.Utc ? date : (date.Kind == DateTimeKind.Local ? date.ToUniversalTime() : DateTime.SpecifyKind(date, DateTimeKind.Utc));
+                return dateUtc <= nowUtc;
+            })
             .WithMessage("Thời gian vi phạm không được lớn hơn thời điểm hiện tại.");
 
         RuleFor(x => x.EvidenceUrl)

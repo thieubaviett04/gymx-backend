@@ -14,7 +14,8 @@ public class CreatePenaltyRuleCommandValidator : AbstractValidator<CreatePenalty
         RuleFor(command => command.FineAmount)
             .GreaterThanOrEqualTo(0).WithMessage("Số tiền phạt phải là số thực không âm.");
 
-        When(command => string.Equals(command.ViolationType?.Trim(), RuleTargetAudience.Staff, StringComparison.OrdinalIgnoreCase), () =>
+        When(command => string.Equals(command.ViolationType?.Trim(), RuleTargetAudience.Staff, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(command.ViolationType?.Trim(), RuleTargetAudience.Trainer, StringComparison.OrdinalIgnoreCase), () =>
         {
             RuleFor(command => command.FineAmount)
                 .GreaterThan(0).WithMessage("Quy định kỷ luật nhân viên yêu cầu nhập số tiền phạt lớn hơn 0 ₫.");
