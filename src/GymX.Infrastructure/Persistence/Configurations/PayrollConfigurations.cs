@@ -89,10 +89,24 @@ public class SalaryFormulaConfiguration : IEntityTypeConfiguration<SalaryFormula
     {
         builder.ToTable("salary_formulas");
 
-        builder.Property(f => f.Name).IsRequired().HasMaxLength(100);
+        builder.HasIndex(f => f.Name)
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false");
+
+        builder.HasIndex(f => f.TargetRole);
+        builder.HasIndex(f => f.Status);
+        builder.HasIndex(f => f.EffectiveDate);
+
+        builder.Property(f => f.Name).IsRequired().HasMaxLength(150);
+        builder.Property(f => f.TargetRole).IsRequired().HasMaxLength(30);
         builder.Property(f => f.BaseRateType).IsRequired().HasMaxLength(20);
-        builder.Property(f => f.BaseRate).HasColumnType("numeric(12,2)");
+        builder.Property(f => f.BaseRate).HasColumnType("numeric(12,2)").IsRequired();
+        builder.Property(f => f.StandardWorkDays).IsRequired().HasDefaultValue(26);
+        builder.Property(f => f.PricePerPtSession).HasColumnType("numeric(12,2)").HasDefaultValue(0);
+        builder.Property(f => f.SalesCommissionPercent).HasColumnType("numeric(5,2)").HasDefaultValue(0);
+        builder.Property(f => f.EffectiveDate).IsRequired();
         builder.Property(f => f.Status).IsRequired().HasMaxLength(20);
+        builder.Property(f => f.Description).HasMaxLength(500);
         builder.Property(f => f.CreatorId).HasColumnName("created_by");
     }
 }
