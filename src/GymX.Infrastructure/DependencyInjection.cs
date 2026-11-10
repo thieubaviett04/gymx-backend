@@ -61,6 +61,7 @@ namespace GymX.Infrastructure
             services.AddScoped<IViolationRepository, ViolationRepository>();
             services.AddScoped<IExpenseRepository, ExpenseRepository>();
             services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+            services.AddScoped<IFinancialAnalyticsRepository, FinancialAnalyticsRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IGoogleAuthService, GoogleAuthService>();    
