@@ -26,6 +26,17 @@ public class PayrollPeriod : EntityAuditBase
         };
     }
 
+    public void MarkAsCalculated()
+    {
+        Status = PayrollPeriodStatus.Calculated;
+        CalculatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateSalaryFormula(Guid salaryFormulaId)
+    {
+        SalaryFormulaId = salaryFormulaId;
+    }
+
     public void Confirm(Guid confirmedBy)
     {
         Status = PayrollPeriodStatus.Confirmed;
