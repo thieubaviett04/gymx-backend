@@ -42,6 +42,22 @@ public class Payslip : EntityAuditBase
         };
     }
 
+    public void UpdateCalculatedSalary(decimal baseSalary, int workedShifts, int lateCount, int earlyLeaveCount, decimal bonusAmount, decimal penaltyAmount, string? note = null)
+    {
+        var total = baseSalary + bonusAmount - penaltyAmount;
+        if (total < 0) total = 0;
+
+        BaseSalary = baseSalary;
+        WorkedShifts = workedShifts;
+        LateCount = lateCount;
+        EarlyLeaveCount = earlyLeaveCount;
+        BonusAmount = bonusAmount;
+        PenaltyAmount = penaltyAmount;
+        TotalSalary = total;
+        Note = note;
+        GeneratedAt = DateTime.UtcNow;
+    }
+
     public void FinalizePayslip()
     {
         Status = PayslipStatus.Finalized;
