@@ -136,6 +136,10 @@ public class PayslipConfiguration : IEntityTypeConfiguration<Payslip>
         builder.Property(p => p.BonusAmount).HasColumnType("numeric(12,2)");
         builder.Property(p => p.PenaltyAmount).HasColumnType("numeric(12,2)");
         builder.Property(p => p.TotalSalary).HasColumnType("numeric(12,2)");
+        builder.Property(p => p.PtSessionsCount).HasDefaultValue(0);
+        builder.Property(p => p.PtTeachingAmount).HasColumnType("numeric(12,2)").HasDefaultValue(0);
+        builder.Property(p => p.SalesRevenue).HasColumnType("numeric(12,2)").HasDefaultValue(0);
+        builder.Property(p => p.CommissionAmount).HasColumnType("numeric(12,2)").HasDefaultValue(0);
         builder.Property(p => p.Status).IsRequired().HasMaxLength(20);
     }
 }

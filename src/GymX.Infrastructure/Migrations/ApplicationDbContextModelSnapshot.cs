@@ -1405,6 +1405,11 @@ namespace GymX.Infrastructure.Migrations
                     b.Property<decimal>("BonusAmount")
                         .HasColumnType("numeric(12,2)");
 
+                    b.Property<decimal>("CommissionAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(12,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
@@ -1437,6 +1442,21 @@ namespace GymX.Infrastructure.Migrations
 
                     b.Property<decimal>("PenaltyAmount")
                         .HasColumnType("numeric(12,2)");
+
+                    b.Property<int>("PtSessionsCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<decimal>("PtTeachingAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(12,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<decimal>("SalesRevenue")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(12,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<string>("Status")
                         .IsRequired()

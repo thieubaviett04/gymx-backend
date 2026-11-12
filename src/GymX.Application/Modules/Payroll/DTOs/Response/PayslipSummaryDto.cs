@@ -15,4 +15,8 @@ public sealed class PayslipSummaryDto
     public decimal TotalSalary { get; init; }
     public string Status { get; init; } = string.Empty;
     public DateTime GeneratedAt { get; init; }
+    public int PtSessionsCount { get; init; }
+    public decimal PtTeachingAmount { get; init; }
+    public decimal SalesRevenue { get; init; }
+    public decimal CommissionAmount { get; init; }
 }
