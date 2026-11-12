@@ -178,12 +178,12 @@ public class PayrollBonusRepository(ApplicationDbContext context)
     {
         if (amount <= 0)
         {
-            return Result.Failure<int>(Error.Validation("PayrollBonus.InvalidAmount", "Số tiền thưởng phải lớn hơn 0."));
+            return Result.Failure<int>(Error.Validation("PayrollBonus.InvalidAmount", "Số tiền khen thưởng phải lớn hơn 0."));
         }
 
         if (string.IsNullOrWhiteSpace(reason))
         {
-            return Result.Failure<int>(Error.Validation("PayrollBonus.EmptyReason", "Vui lòng nhập lý do / dịp khen thưởng."));
+            return Result.Failure<int>(Error.Validation("PayrollBonus.EmptyReason", "Vui lòng nhập nội dung khen thưởng."));
         }
 
         var periodStart = new DateOnly(year, month, 1);
@@ -191,7 +191,7 @@ public class PayrollBonusRepository(ApplicationDbContext context)
         var existingPeriod = await Context.PayrollPeriods
             .FirstOrDefaultAsync(p => p.PeriodStart == periodStart && p.PeriodEnd == periodEnd, cancellationToken);
 
-        if (existingPeriod != null && existingPeriod.Status == PayrollPeriodStatus.Confirmed)
+        if (existingPeriod != null && (existingPeriod.Status == PayrollPeriodStatus.Confirmed || existingPeriod.Status == "LOCKED"))
         {
             return Result.Failure<int>(PayrollErrors.PeriodAlreadyConfirmed);
         }
@@ -249,7 +249,7 @@ public class PayrollBonusRepository(ApplicationDbContext context)
     {
         if (amount < 0)
         {
-            return Result.Failure<PayrollBonusDto>(Error.Validation("PayrollBonus.InvalidAmount", "Số tiền thưởng không được âm."));
+            return Result.Failure<PayrollBonusDto>(Error.Validation("PayrollBonus.InvalidAmount", "Số tiền khen thưởng không được âm."));
         }
 
         var bonus = await Context.PayrollBonuses.FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
@@ -263,7 +263,7 @@ public class PayrollBonusRepository(ApplicationDbContext context)
         var period = await Context.PayrollPeriods
             .FirstOrDefaultAsync(p => p.PeriodStart == periodStart && p.PeriodEnd == periodEnd, cancellationToken);
 
-        if (period != null && period.Status == PayrollPeriodStatus.Confirmed)
+        if (period != null && (period.Status == PayrollPeriodStatus.Confirmed || period.Status == "LOCKED"))
         {
             return Result.Failure<PayrollBonusDto>(PayrollErrors.PeriodAlreadyConfirmed);
         }
@@ -311,7 +311,7 @@ public class PayrollBonusRepository(ApplicationDbContext context)
         var period = await Context.PayrollPeriods
             .FirstOrDefaultAsync(p => p.PeriodStart == periodStart && p.PeriodEnd == periodEnd, cancellationToken);
 
-        if (period != null && period.Status == PayrollPeriodStatus.Confirmed)
+        if (period != null && (period.Status == PayrollPeriodStatus.Confirmed || period.Status == "LOCKED"))
         {
             return Result.Failure<bool>(PayrollErrors.PeriodAlreadyConfirmed);
         }

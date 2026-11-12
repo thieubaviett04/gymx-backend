@@ -60,15 +60,29 @@ public class PayrollBonusesController(ISender sender) : ControllerBase
         [FromBody] CreatePayrollBonusRequest request,
         CancellationToken cancellationToken = default)
     {
+        var employeeIds = request.EmployeeIds ?? [];
+        if (request.EmployeeId.HasValue && !employeeIds.Contains(request.EmployeeId.Value))
+        {
+            employeeIds.Add(request.EmployeeId.Value);
+        }
+
+        var reason = !string.IsNullOrWhiteSpace(request.Reason)
+            ? request.Reason
+            : (request.Content ?? string.Empty);
+
+        var targetType = !string.IsNullOrWhiteSpace(request.TargetType)
+            ? request.TargetType
+            : (employeeIds.Count > 0 ? "INDIVIDUAL" : "ALL");
+
         var result = await sender.Send(new CreatePayrollBonusCommand(
             request.Month,
             request.Year,
             request.BonusType,
-            request.TargetType,
+            targetType,
             request.Position,
-            request.EmployeeIds,
+            employeeIds,
             request.Amount,
-            request.Reason), cancellationToken);
+            reason), cancellationToken);
 
         if (result.IsSuccess)
         {
@@ -88,10 +102,14 @@ public class PayrollBonusesController(ISender sender) : ControllerBase
         [FromBody] UpdatePayrollBonusRequest request,
         CancellationToken cancellationToken = default)
     {
+        var reason = !string.IsNullOrWhiteSpace(request.Reason)
+            ? request.Reason
+            : (request.Content ?? string.Empty);
+
         var result = await sender.Send(new UpdatePayrollBonusCommand(
             id,
             request.Amount,
-            request.Reason,
+            reason,
             request.BonusType), cancellationToken);
 
         if (result.IsSuccess)

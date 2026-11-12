@@ -34,13 +34,13 @@ public sealed class UpdatePayrollBonusCommandValidator : AbstractValidator<Updat
     {
         RuleFor(x => x.Amount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Số tiền thưởng không được nhỏ hơn 0.");
+            .WithMessage("Số tiền khen thưởng không được nhỏ hơn 0.");
 
         RuleFor(x => x.Reason)
             .NotEmpty()
-            .WithMessage("Vui lòng nhập lý do / dịp khen thưởng.")
+            .WithMessage("Vui lòng nhập nội dung khen thưởng.")
             .MaximumLength(500)
-            .WithMessage("Lý do khen thưởng không vượt quá 500 ký tự.");
+            .WithMessage("Nội dung khen thưởng không vượt quá 500 ký tự.");
     }
 }
 
