@@ -188,7 +188,7 @@ public class PayrollBonusRepository(ApplicationDbContext context)
 
         if (existingPeriod != null && (existingPeriod.Status == PayrollPeriodStatus.Confirmed || existingPeriod.Status == "LOCKED"))
         {
-            return Result.Failure<int>(PayrollErrors.PeriodAlreadyConfirmed);
+            return Result.Failure<int>(Error.Conflict("Payroll.PeriodAlreadyConfirmed", "Kỳ tính lương này đã được chốt và khóa sổ. Không thể thêm khoản khen thưởng mới."));
         }
 
         var empQuery = Context.Employees.Where(e => !e.IsDeleted && e.EmploymentStatus == EmployeeStatus.Active);
@@ -260,7 +260,7 @@ public class PayrollBonusRepository(ApplicationDbContext context)
 
         if (period != null && (period.Status == PayrollPeriodStatus.Confirmed || period.Status == "LOCKED"))
         {
-            return Result.Failure<PayrollBonusDto>(PayrollErrors.PeriodAlreadyConfirmed);
+            return Result.Failure<PayrollBonusDto>(Error.Conflict("Payroll.PeriodAlreadyConfirmed", "Kỳ tính lương này đã được chốt và khóa sổ. Không thể chỉnh sửa khen thưởng."));
         }
 
         bonus.Update(amount, reason, bonusType);
@@ -308,7 +308,7 @@ public class PayrollBonusRepository(ApplicationDbContext context)
 
         if (period != null && (period.Status == PayrollPeriodStatus.Confirmed || period.Status == "LOCKED"))
         {
-            return Result.Failure<bool>(PayrollErrors.PeriodAlreadyConfirmed);
+            return Result.Failure<bool>(Error.Conflict("Payroll.PeriodAlreadyConfirmed", "Kỳ tính lương này đã được chốt và khóa sổ. Không thể xóa khen thưởng."));
         }
 
         Context.PayrollBonuses.Remove(bonus);
