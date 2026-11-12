@@ -1,5 +1,3 @@
-using FluentValidation;
-using GymX.Application.Common.Interfaces.Repositories;
 using GymX.Application.Modules.PayrollBonuses.DTOs;
 using GymX.Domain.Common.Models;
 using MediatR;
@@ -11,36 +9,3 @@ public sealed record UpdatePayrollBonusCommand(
     decimal Amount,
     string Reason,
     string BonusType) : IRequest<Result<PayrollBonusDto>>;
-
-public sealed class UpdatePayrollBonusCommandHandler(
-    IPayrollBonusRepository bonusRepository) : IRequestHandler<UpdatePayrollBonusCommand, Result<PayrollBonusDto>>
-{
-    public async Task<Result<PayrollBonusDto>> Handle(
-        UpdatePayrollBonusCommand request,
-        CancellationToken cancellationToken)
-    {
-        return await bonusRepository.UpdateBonusAsync(
-            request.Id,
-            request.Amount,
-            request.Reason,
-            request.BonusType,
-            cancellationToken);
-    }
-}
-
-public sealed class UpdatePayrollBonusCommandValidator : AbstractValidator<UpdatePayrollBonusCommand>
-{
-    public UpdatePayrollBonusCommandValidator()
-    {
-        RuleFor(x => x.Amount)
-            .GreaterThanOrEqualTo(0)
-            .WithMessage("Số tiền khen thưởng không được nhỏ hơn 0.");
-
-        RuleFor(x => x.Reason)
-            .NotEmpty()
-            .WithMessage("Vui lòng nhập nội dung khen thưởng.")
-            .MaximumLength(500)
-            .WithMessage("Nội dung khen thưởng không vượt quá 500 ký tự.");
-    }
-}
-
