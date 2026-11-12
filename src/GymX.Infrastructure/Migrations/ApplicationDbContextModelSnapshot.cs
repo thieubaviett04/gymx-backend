@@ -1343,6 +1343,58 @@ namespace GymX.Infrastructure.Migrations
                     b.ToTable("package_categories", (string)null);
                 });
 
+            modelBuilder.Entity("GymX.Domain.Entities.Payroll.PayrollBonus", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(12,2)");
+
+                    b.Property<string>("BonusType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("LastModifiedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("PayrollPeriodId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Month", "Year");
+
+                    b.HasIndex("EmployeeId", "Month", "Year");
+
+                    b.ToTable("payroll_bonuses", (string)null);
+                });
+
             modelBuilder.Entity("GymX.Domain.Entities.Payroll.PayrollPeriod", b =>
                 {
                     b.Property<Guid>("Id")

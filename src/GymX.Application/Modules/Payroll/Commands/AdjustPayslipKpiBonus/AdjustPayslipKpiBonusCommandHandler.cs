@@ -25,3 +25,4 @@ public sealed class AdjustPayslipKpiBonusCommandHandler(
             cancellationToken);
     }
 }
+

@@ -144,3 +144,18 @@ public class PayslipConfiguration : IEntityTypeConfiguration<Payslip>
         builder.Property(p => p.Status).IsRequired().HasMaxLength(20);
     }
 }
+
+public class PayrollBonusConfiguration : IEntityTypeConfiguration<PayrollBonus>
+{
+    public void Configure(EntityTypeBuilder<PayrollBonus> builder)
+    {
+        builder.ToTable("payroll_bonuses");
+
+        builder.HasIndex(b => new { b.EmployeeId, b.Month, b.Year });
+        builder.HasIndex(b => new { b.Month, b.Year });
+
+        builder.Property(b => b.BonusType).IsRequired().HasMaxLength(50);
+        builder.Property(b => b.Amount).HasColumnType("numeric(12,2)").IsRequired();
+        builder.Property(b => b.Reason).IsRequired().HasMaxLength(500);
+    }
+}

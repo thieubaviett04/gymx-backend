@@ -8,3 +8,4 @@ public sealed record AdjustPayslipKpiBonusCommand(
     Guid PayslipId,
     decimal KpiBonusAmount,
     string? Note) : IRequest<Result<PayslipDetailDto>>;
+

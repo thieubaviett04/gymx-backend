@@ -176,6 +176,15 @@ public class PayrollRepository(ApplicationDbContext context)
             .OrderByDescending(f => f.EffectiveDate)
             .ToListAsync(cancellationToken);
 
+        var bonuses = await Context.PayrollBonuses
+            .AsNoTracking()
+            .Where(b => b.Month == month && b.Year == year)
+            .ToListAsync(cancellationToken);
+
+        var bonusesMap = bonuses
+            .GroupBy(b => b.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.Sum(b => b.Amount));
+
         foreach (var employee in activeEmployees)
         {
             var roleFormula = roleFormulas.FirstOrDefault(f =>
@@ -275,7 +284,11 @@ public class PayrollRepository(ApplicationDbContext context)
 
             var note = $"Công thức: {formula.Name}. Lương cứng: {calculatedBaseSalary:N0} ₫ ({workedUnits}/{formula.StandardWorkDays} {unitName}). Tiền dạy PT: {teachingAmount:N0} ₫ ({ptSessionsCount} buổi). Hoa hồng bán: {commissionAmount:N0} ₫ ({formula.SalesCommissionPercent}% của {salesRevenue:N0} ₫). Phạt: -{penaltyAmount:N0} ₫.";
 
-            if (existingPayslipsMap.TryGetValue(employee.Id, out var existingPayslip))
+            bonusesMap.TryGetValue(employee.Id, out var manualBonusAmount);
+            existingPayslipsMap.TryGetValue(employee.Id, out var existingPayslip);
+            var kpiBonusAmount = manualBonusAmount > 0 ? manualBonusAmount : (existingPayslip?.KpiBonusAmount ?? 0m);
+
+            if (existingPayslip != null)
             {
                 existingPayslip.UpdateCalculatedSalary(
                     calculatedBaseSalary,
@@ -288,7 +301,7 @@ public class PayrollRepository(ApplicationDbContext context)
                     teachingAmount,
                     salesRevenue,
                     commissionAmount,
-                    existingPayslip.KpiBonusAmount,
+                    kpiBonusAmount,
                     note);
             }
             else
@@ -306,7 +319,7 @@ public class PayrollRepository(ApplicationDbContext context)
                     teachingAmount,
                     salesRevenue,
                     commissionAmount,
-                    0m,
+                    kpiBonusAmount,
                     note);
 
                 await Context.Payslips.AddAsync(newPayslip, cancellationToken);
