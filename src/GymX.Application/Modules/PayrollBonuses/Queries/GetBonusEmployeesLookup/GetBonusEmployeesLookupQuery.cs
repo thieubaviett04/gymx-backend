@@ -26,3 +26,4 @@ public sealed class GetBonusEmployeesLookupQueryHandler(
         return Result.Success(list);
     }
 }
+

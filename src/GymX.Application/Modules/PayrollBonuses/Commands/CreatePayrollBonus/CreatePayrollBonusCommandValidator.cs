@@ -25,3 +25,4 @@ public sealed class CreatePayrollBonusCommandValidator : AbstractValidator<Creat
             .WithMessage("Lý do khen thưởng không vượt quá 500 ký tự.");
     }
 }
+

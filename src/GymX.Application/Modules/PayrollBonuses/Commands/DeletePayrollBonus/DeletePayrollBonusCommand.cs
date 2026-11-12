@@ -16,3 +16,4 @@ public sealed class DeletePayrollBonusCommandHandler(
         return await bonusRepository.DeleteBonusAsync(request.Id, cancellationToken);
     }
 }
+

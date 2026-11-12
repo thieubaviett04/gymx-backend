@@ -35,3 +35,4 @@ public sealed class BonusEmployeeLookupDto
     public string Position { get; init; } = string.Empty;
     public string? MonthlyPerformance { get; init; }
 }
+

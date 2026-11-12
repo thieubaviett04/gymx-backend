@@ -44,3 +44,4 @@ public interface IPayrollBonusRepository : IGenericRepository<PayrollBonus>
         string? search,
         CancellationToken cancellationToken = default);
 }
+
