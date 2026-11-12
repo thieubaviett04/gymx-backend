@@ -1,4 +1,5 @@
-﻿using System;
+
+using System;
 using GymX.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -1424,6 +1425,11 @@ namespace GymX.Infrastructure.Migrations
 
                     b.Property<DateTime>("GeneratedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("KpiBonusAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(12,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("text");

@@ -19,4 +19,5 @@ public sealed class PayslipSummaryDto
     public decimal PtTeachingAmount { get; init; }
     public decimal SalesRevenue { get; init; }
     public decimal CommissionAmount { get; init; }
+    public decimal KpiBonusAmount { get; init; }
 }

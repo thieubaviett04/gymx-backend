@@ -140,6 +140,7 @@ public class PayslipConfiguration : IEntityTypeConfiguration<Payslip>
         builder.Property(p => p.PtTeachingAmount).HasColumnType("numeric(12,2)").HasDefaultValue(0);
         builder.Property(p => p.SalesRevenue).HasColumnType("numeric(12,2)").HasDefaultValue(0);
         builder.Property(p => p.CommissionAmount).HasColumnType("numeric(12,2)").HasDefaultValue(0);
+        builder.Property(p => p.KpiBonusAmount).HasColumnType("numeric(12,2)").HasDefaultValue(0);
         builder.Property(p => p.Status).IsRequired().HasMaxLength(20);
     }
 }

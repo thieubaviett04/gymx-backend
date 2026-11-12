@@ -5,3 +5,7 @@ public sealed record CalculatePayrollRequest(
     int Year);
 
 public sealed record LockPayrollPeriodRequest;
+
+public sealed record AdjustPayslipKpiBonusRequest(
+    decimal KpiBonusAmount,
+    string? Note);

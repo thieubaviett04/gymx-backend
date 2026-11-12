@@ -12,6 +12,7 @@ public sealed class PayrollPeriodSummaryDto
     public decimal TotalBaseSalary { get; init; }
     public decimal TotalPtAmount { get; init; }
     public decimal TotalCommissionAmount { get; init; }
+    public decimal TotalKpiBonusAmount { get; init; }
     public decimal TotalPenaltyAmount { get; init; }
     public int TotalEmployees { get; init; }
     public DateTime? CalculatedAt { get; init; }

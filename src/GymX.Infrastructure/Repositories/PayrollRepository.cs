@@ -288,6 +288,7 @@ public class PayrollRepository(ApplicationDbContext context)
                     teachingAmount,
                     salesRevenue,
                     commissionAmount,
+                    existingPayslip.KpiBonusAmount,
                     note);
             }
             else
@@ -305,6 +306,7 @@ public class PayrollRepository(ApplicationDbContext context)
                     teachingAmount,
                     salesRevenue,
                     commissionAmount,
+                    0m,
                     note);
 
                 await Context.Payslips.AddAsync(newPayslip, cancellationToken);
@@ -380,6 +382,7 @@ public class PayrollRepository(ApplicationDbContext context)
                 TotalBaseSalary = g.Sum(ps => ps.BaseSalary),
                 TotalPtAmount = g.Sum(ps => ps.PtTeachingAmount),
                 TotalCommissionAmount = g.Sum(ps => ps.CommissionAmount),
+                TotalKpiBonusAmount = g.Sum(ps => ps.KpiBonusAmount),
                 TotalPenaltyAmount = g.Sum(ps => ps.PenaltyAmount),
                 TotalEmployees = g.Count()
             })
@@ -400,6 +403,7 @@ public class PayrollRepository(ApplicationDbContext context)
                 TotalBaseSalary = stats?.TotalBaseSalary ?? 0m,
                 TotalPtAmount = stats?.TotalPtAmount ?? 0m,
                 TotalCommissionAmount = stats?.TotalCommissionAmount ?? 0m,
+                TotalKpiBonusAmount = stats?.TotalKpiBonusAmount ?? 0m,
                 TotalPenaltyAmount = stats?.TotalPenaltyAmount ?? 0m,
                 TotalEmployees = stats?.TotalEmployees ?? 0,
                 CalculatedAt = item.Period.CalculatedAt,
@@ -454,7 +458,8 @@ public class PayrollRepository(ApplicationDbContext context)
                                   PtSessionsCount = ps.PtSessionsCount,
                                   PtTeachingAmount = ps.PtTeachingAmount,
                                   SalesRevenue = ps.SalesRevenue,
-                                  CommissionAmount = ps.CommissionAmount
+                                  CommissionAmount = ps.CommissionAmount,
+                                  KpiBonusAmount = ps.KpiBonusAmount
                               }).ToListAsync(cancellationToken);
 
         return new PayrollPeriodDetailDto
@@ -469,6 +474,7 @@ public class PayrollRepository(ApplicationDbContext context)
             TotalBaseSalary = payslips.Sum(ps => ps.BaseSalary),
             TotalPtAmount = payslips.Sum(ps => ps.PtTeachingAmount),
             TotalCommissionAmount = payslips.Sum(ps => ps.CommissionAmount),
+            TotalKpiBonusAmount = payslips.Sum(ps => ps.KpiBonusAmount),
             TotalPenaltyAmount = payslips.Sum(ps => ps.PenaltyAmount),
             TotalEmployees = payslips.Count,
             CalculatedAt = periodRecord.Period.CalculatedAt,
@@ -537,7 +543,8 @@ public class PayrollRepository(ApplicationDbContext context)
                 PtSessionsCount = item.Payslip.PtSessionsCount,
                 PtTeachingAmount = item.Payslip.PtTeachingAmount,
                 SalesRevenue = item.Payslip.SalesRevenue,
-                CommissionAmount = item.Payslip.CommissionAmount
+                CommissionAmount = item.Payslip.CommissionAmount,
+                KpiBonusAmount = item.Payslip.KpiBonusAmount
             })
             .ToListAsync(cancellationToken);
 
@@ -574,7 +581,8 @@ public class PayrollRepository(ApplicationDbContext context)
                                PtSessionsCount = ps.PtSessionsCount,
                                PtTeachingAmount = ps.PtTeachingAmount,
                                SalesRevenue = ps.SalesRevenue,
-                               CommissionAmount = ps.CommissionAmount
+                               CommissionAmount = ps.CommissionAmount,
+                               KpiBonusAmount = ps.KpiBonusAmount
                            };
 
         return await payslipQuery.FirstOrDefaultAsync(cancellationToken);
@@ -613,7 +621,8 @@ public class PayrollRepository(ApplicationDbContext context)
                                   PtSessionsCount = ps.PtSessionsCount,
                                   PtTeachingAmount = ps.PtTeachingAmount,
                                   SalesRevenue = ps.SalesRevenue,
-                                  CommissionAmount = ps.CommissionAmount
+                                  CommissionAmount = ps.CommissionAmount,
+                                  KpiBonusAmount = ps.KpiBonusAmount
                               }).ToListAsync(cancellationToken);
 
         return payslips;
@@ -624,5 +633,44 @@ public class PayrollRepository(ApplicationDbContext context)
         return await Context.Payslips
             .Where(ps => ps.PayrollPeriodId == periodId)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Result<PayslipDetailDto>> AdjustPayslipKpiBonusAsync(
+        Guid payslipId,
+        decimal kpiBonusAmount,
+        string? note,
+        CancellationToken cancellationToken = default)
+    {
+        var payslip = await Context.Payslips
+            .FirstOrDefaultAsync(ps => ps.Id == payslipId, cancellationToken);
+
+        if (payslip == null)
+        {
+            return Result.Failure<PayslipDetailDto>(PayrollErrors.PayslipNotFound(payslipId));
+        }
+
+        var period = await Context.PayrollPeriods
+            .FirstOrDefaultAsync(p => p.Id == payslip.PayrollPeriodId, cancellationToken);
+
+        if (period == null)
+        {
+            return Result.Failure<PayslipDetailDto>(PayrollErrors.PeriodNotFound(payslip.PayrollPeriodId));
+        }
+
+        if (period.Status == PayrollPeriodStatus.Confirmed)
+        {
+            return Result.Failure<PayslipDetailDto>(PayrollErrors.PeriodAlreadyConfirmed);
+        }
+
+        payslip.AdjustKpiBonus(kpiBonusAmount, note);
+        await Context.SaveChangesAsync(cancellationToken);
+
+        var detail = await GetPayslipDetailByIdAsync(payslipId, cancellationToken);
+        if (detail == null)
+        {
+            return Result.Failure<PayslipDetailDto>(PayrollErrors.PayslipNotFound(payslipId));
+        }
+
+        return Result.Success(detail);
     }
 }
