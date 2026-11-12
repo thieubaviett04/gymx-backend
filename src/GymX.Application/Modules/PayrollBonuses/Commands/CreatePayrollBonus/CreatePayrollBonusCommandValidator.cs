@@ -12,11 +12,37 @@ public sealed class CreatePayrollBonusCommandValidator : AbstractValidator<Creat
 
         RuleFor(x => x.Month)
             .InclusiveBetween(1, 12)
-            .WithMessage("Tháng khen thưởng phải từ 1 đến 12.");
+            .WithMessage("Tháng khen thưởng phải từ 1 đến 12.")
+            .Must((command, month) =>
+            {
+                if (command.Year < 2020 || command.Year > 2100 || month < 1 || month > 12)
+                {
+                    return true;
+                }
+
+                var now = DateTime.UtcNow.AddHours(7);
+                var currentPeriod = new DateOnly(now.Year, now.Month, 1);
+                var selectedPeriod = new DateOnly(command.Year, month, 1);
+                return selectedPeriod >= currentPeriod;
+            })
+            .WithMessage("Kỳ tính lương không được là kỳ trong quá khứ. Vui lòng chọn tháng hiện tại hoặc các tháng tiếp theo.");
 
         RuleFor(x => x.Year)
             .InclusiveBetween(2020, 2100)
-            .WithMessage("Năm khen thưởng không hợp lệ.");
+            .WithMessage("Năm khen thưởng không hợp lệ.")
+            .Must((command, year) =>
+            {
+                if (year < 2020 || year > 2100 || command.Month < 1 || command.Month > 12)
+                {
+                    return true;
+                }
+
+                var now = DateTime.UtcNow.AddHours(7);
+                var currentPeriod = new DateOnly(now.Year, now.Month, 1);
+                var selectedPeriod = new DateOnly(year, command.Month, 1);
+                return selectedPeriod >= currentPeriod;
+            })
+            .WithMessage("Kỳ tính lương không được là kỳ trong quá khứ. Vui lòng chọn tháng hiện tại hoặc các tháng tiếp theo.");
 
         RuleFor(x => x.EmployeeIds)
             .Must(ids => ids != null && ids.Count > 0)

@@ -29,10 +29,14 @@ public class CancelViolationCommandHandler(
         if (isPayrollPeriodClosed)
         {
             return Result.Failure(
-                Error.Conflict("Violation.PayrollPeriodClosed", "Thời gian vi phạm thuộc kỳ tính lương đã được chốt và duyệt. Không thể hủy biên bản này."));
+                Error.Conflict("Violation.PayrollPeriodClosed", "Thời gian vi phạm thuộc kỳ tính lương đã được chốt và duyệt. Không thể xóa biên bản này."));
         }
 
-        violation.Cancel(command.Reason, command.CancelledBy);
+        var reason = string.IsNullOrWhiteSpace(command.Reason)
+            ? "Hủy bởi quản trị viên"
+            : command.Reason.Trim();
+
+        violation.Cancel(reason, command.CancelledBy);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

@@ -304,6 +304,45 @@ public static class FinanceSeeder
             }
         }
 
+        var existingRules = await context.PenaltyRules.ToListAsync();
+        foreach (var rule in existingRules)
+        {
+            if (rule.Name == "Trang phục và tác phong làm việc" && rule.ViolationType == "STAFF")
+            {
+                rule.UpdateInfo(rule.Name, rule.FineAmount, rule.SeverityLevel, rule.EffectiveFrom, rule.Status, rule.Description, RuleTargetAudience.General);
+            }
+        }
+
+        var ruleTemplates = new (string name, decimal fine, string severity, string targetAudience, string desc)[]
+        {
+            ("Đi muộn hoặc về sớm quá 15 phút", 50000m, "MEDIUM", RuleTargetAudience.General, "Áp dụng cho toàn thể nhân viên khi chấm công trễ"),
+            ("Nghỉ làm không phép / không báo trước", 200000m, "HIGH", RuleTargetAudience.General, "Tự ý bỏ ca trực không có sự đồng ý của quản lý"),
+            ("HLV vắng mặt hoặc trễ giờ ca dạy kèm PT", 100000m, "MEDIUM", RuleTargetAudience.Trainer, "Huấn luyện viên không có mặt đúng giờ hẹn với hội viên"),
+            ("HLV không cập nhật giáo án tập luyện của hội viên", 150000m, "MEDIUM", RuleTargetAudience.Trainer, "Không theo dõi và ghi chép lộ trình tập luyện"),
+            ("Sử dụng điện thoại làm việc riêng trong giờ hướng dẫn", 50000m, "LOW", RuleTargetAudience.Trainer, "HLV lơ là không hỗ trợ hội viên đang tập luyện"),
+            ("Rời quầy lễ tân không có người trực thay", 100000m, "MEDIUM", RuleTargetAudience.Staff, "Bỏ vị trí trực sảnh đón tiếp hội viên"),
+            ("Không kiểm soát hội viên check-in vào phòng tập", 50000m, "MEDIUM", RuleTargetAudience.Staff, "Để khách vào tập khi chưa thực hiện quét mã check-in")
+        };
+
+        foreach (var t in ruleTemplates)
+        {
+            if (!existingRules.Any(r => r.Name == t.name))
+            {
+                var newRule = PenaltyRule.Create(
+                    t.name,
+                    t.fine,
+                    t.severity,
+                    todayVn.AddMonths(-3).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
+                    t.desc,
+                    PenaltyRuleStatus.Active,
+                    null,
+                    null,
+                    t.targetAudience);
+                await context.PenaltyRules.AddAsync(newRule);
+            }
+        }
+        await context.SaveChangesAsync();
+
         foreach (var emp in employees)
         {
             profiles.TryGetValue(emp.EmployeeCode, out var profile);

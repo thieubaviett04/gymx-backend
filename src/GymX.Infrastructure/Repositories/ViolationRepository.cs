@@ -2,6 +2,7 @@ using GymX.Application.Common.Interfaces.Repositories;
 using GymX.Application.Modules.Violations.DTOs.Response;
 using GymX.Domain.Common.Models;
 using GymX.Domain.Constants;
+using GymX.Domain.Constants.Payroll;
 using GymX.Domain.Entities.Payroll;
 using GymX.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -101,6 +102,10 @@ public class ViolationRepository(ApplicationDbContext context)
         {
             var normalizedStatus = status.Trim().ToUpperInvariant();
             violationQuery = violationQuery.Where(item => item.Violation.Status == normalizedStatus);
+        }
+        else
+        {
+            violationQuery = violationQuery.Where(item => item.Violation.Status != ViolationStatus.Cancelled);
         }
 
         if (fromDate.HasValue)
