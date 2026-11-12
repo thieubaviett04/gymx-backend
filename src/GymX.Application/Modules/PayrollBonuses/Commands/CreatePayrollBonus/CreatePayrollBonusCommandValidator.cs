@@ -29,9 +29,8 @@ public sealed class CreatePayrollBonusCommandValidator : AbstractValidator<Creat
             .WithMessage("Số tiền khen thưởng phải lớn hơn 0.");
 
         RuleFor(x => x.Reason)
-            .NotEmpty()
-            .WithMessage("Vui lòng nhập nội dung khen thưởng.")
             .MaximumLength(500)
+            .When(x => !string.IsNullOrEmpty(x.Reason))
             .WithMessage("Nội dung khen thưởng không vượt quá 500 ký tự.");
     }
 }

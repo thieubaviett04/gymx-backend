@@ -181,11 +181,6 @@ public class PayrollBonusRepository(ApplicationDbContext context)
             return Result.Failure<int>(Error.Validation("PayrollBonus.InvalidAmount", "Số tiền khen thưởng phải lớn hơn 0."));
         }
 
-        if (string.IsNullOrWhiteSpace(reason))
-        {
-            return Result.Failure<int>(Error.Validation("PayrollBonus.EmptyReason", "Vui lòng nhập nội dung khen thưởng."));
-        }
-
         var periodStart = new DateOnly(year, month, 1);
         var periodEnd = periodStart.AddMonths(1).AddDays(-1);
         var existingPeriod = await Context.PayrollPeriods

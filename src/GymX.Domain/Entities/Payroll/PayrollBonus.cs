@@ -31,7 +31,7 @@ public class PayrollBonus : EntityAuditBase
             Year = year,
             BonusType = string.IsNullOrWhiteSpace(bonusType) ? PayrollBonusTypes.Kpi : bonusType.Trim().ToUpperInvariant(),
             Amount = amount < 0 ? 0 : amount,
-            Reason = reason.Trim(),
+            Reason = reason?.Trim() ?? string.Empty,
             PayrollPeriodId = payrollPeriodId
         };
     }
@@ -39,7 +39,7 @@ public class PayrollBonus : EntityAuditBase
     public void Update(decimal amount, string reason, string bonusType)
     {
         Amount = amount < 0 ? 0 : amount;
-        Reason = reason.Trim();
+        Reason = reason?.Trim() ?? string.Empty;
         BonusType = string.IsNullOrWhiteSpace(bonusType) ? PayrollBonusTypes.Kpi : bonusType.Trim().ToUpperInvariant();
     }
 

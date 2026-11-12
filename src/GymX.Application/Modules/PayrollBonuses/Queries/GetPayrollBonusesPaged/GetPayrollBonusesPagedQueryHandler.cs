@@ -25,3 +25,4 @@ public sealed class GetPayrollBonusesPagedQueryHandler(
         return Result.Success(result);
     }
 }
+
