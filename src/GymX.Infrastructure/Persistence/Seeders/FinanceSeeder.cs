@@ -5,6 +5,7 @@ using GymX.Domain.Entities.Attendance;
 using GymX.Domain.Entities.Finance;
 using GymX.Domain.Entities.Payroll;
 using GymX.Domain.Entities.Training;
+using GymX.Domain.Entities.Employees;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymX.Infrastructure.Persistence.Seeders;
@@ -103,125 +104,234 @@ public static class FinanceSeeder
         var morning = shifts.FirstOrDefault(s => s.Name == "Ca sáng") ?? shifts.First();
         var afternoon = shifts.FirstOrDefault(s => s.Name == "Ca chiều") ?? shifts.First();
 
-        var recEmp = await context.Employees.FirstOrDefaultAsync(e => e.Position == "RECEPTIONIST" && !e.IsDeleted);
-        var trainerEmp = await context.Employees.FirstOrDefaultAsync(e => e.Position == "TRAINER" && !e.IsDeleted);
+        var inactiveEmployees = await context.Employees
+            .Where(e => !e.IsDeleted && (e.EmployeeCode == "NV0018" || e.EmployeeCode == "NV0020"))
+            .ToListAsync();
+
+        foreach (var emp in inactiveEmployees)
+        {
+            emp.UpdateInfo(emp.Position, emp.BaseSalaryRate, EmployeeStatus.Active);
+        }
+        if (inactiveEmployees.Count > 0)
+        {
+            await context.SaveChangesAsync();
+        }
+
+        var employees = await context.Employees
+            .Where(e => !e.IsDeleted && e.EmploymentStatus == EmployeeStatus.Active)
+            .OrderBy(e => e.EmployeeCode)
+            .Take(10)
+            .ToListAsync();
 
         var monthStart = new DateOnly(todayVn.Year, todayVn.Month, 1);
         var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+        var startUtc = monthStart.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc).AddHours(-7);
 
-        if (recEmp != null && !await context.EmployeeWorkSchedules.AnyAsync(s => s.EmployeeId == recEmp.Id && s.WorkDate >= monthStart && s.WorkDate <= monthEnd))
+        var spec = await context.Specializations.FirstOrDefaultAsync();
+        var specId = spec?.Id ?? Guid.NewGuid();
+
+        var profiles = new Dictionary<string, (int attendedDays, int[] lateDays, int ptSessions, decimal salesRevenue, bool hasViolation)>
         {
-            var recSchedules = new List<EmployeeWorkSchedule>();
-            var dayCount = Math.Min(26, monthEnd.Day);
-            for (var d = 1; d <= dayCount; d++)
-            {
-                var workDate = new DateOnly(todayVn.Year, todayVn.Month, d);
-                var schedule = EmployeeWorkSchedule.Create(recEmp.Id, morning.Id, workDate);
-                schedule.Approve(adminId);
-                recSchedules.Add(schedule);
-            }
-            await context.EmployeeWorkSchedules.AddRangeAsync(recSchedules);
-            await context.SaveChangesAsync();
+            ["NV0018"] = (26, [], 35, 30000000m, false),
+            ["NV0020"] = (25, [], 0, 14000000m, false),
+            ["NV0021"] = (24, [4, 12], 0, 15000000m, true),
+            ["NV0022"] = (26, [], 32, 25000000m, false),
+            ["NV0023"] = (25, [7], 0, 10000000m, false),
+            ["NV0024"] = (24, [5], 25, 18000000m, false),
+            ["NV0025"] = (26, [], 28, 20000000m, false),
+            ["NV0026"] = (22, [], 0, 8000000m, false),
+            ["NV0027"] = (26, [], 0, 12000000m, false),
+            ["NV0028"] = (20, [8], 0, 6000000m, false)
+        };
 
-            var recRecords = new List<EmployeeAttendanceRecord>();
-            for (var i = 0; i < recSchedules.Count; i++)
-            {
-                var sch = recSchedules[i];
-                if (i >= 24) continue;
+        var empIds = employees.Select(e => e.Id).ToList();
+        var existingSchedulesCount = await context.EmployeeWorkSchedules
+            .CountAsync(s => empIds.Contains(s.EmployeeId) && s.WorkDate >= monthStart && s.WorkDate <= monthEnd);
 
-                var isLate = i == 3 || i == 11;
-                var checkInTime = sch.WorkDate.ToDateTime(isLate ? new TimeOnly(6, 15) : new TimeOnly(5, 55), DateTimeKind.Utc).AddHours(-7);
-                var checkOutTime = sch.WorkDate.ToDateTime(new TimeOnly(14, 5), DateTimeKind.Utc).AddHours(-7);
-
-                var att = EmployeeAttendanceRecord.Create(sch.Id, AttendanceStatus.Present);
-                att.MarkCheckIn(checkInTime, AttendanceMethod.FaceRecognition, isLate ? 15 : 0);
-                att.MarkCheckOut(checkOutTime, AttendanceMethod.FaceRecognition, 0);
-                recRecords.Add(att);
-            }
-            await context.EmployeeAttendanceRecords.AddRangeAsync(recRecords);
-            await context.SaveChangesAsync();
-        }
-
-        if (trainerEmp != null && !await context.EmployeeWorkSchedules.AnyAsync(s => s.EmployeeId == trainerEmp.Id && s.WorkDate >= monthStart && s.WorkDate <= monthEnd))
+        if (existingSchedulesCount < employees.Count * 26)
         {
-            var trainerSchedules = new List<EmployeeWorkSchedule>();
-            var dayCount = Math.Min(26, monthEnd.Day);
-            for (var d = 1; d <= dayCount; d++)
+            var oldSchedules = await context.EmployeeWorkSchedules
+                .Where(s => empIds.Contains(s.EmployeeId) && s.WorkDate >= monthStart && s.WorkDate <= monthEnd)
+                .ToListAsync();
+
+            if (oldSchedules.Count > 0)
             {
-                var workDate = new DateOnly(todayVn.Year, todayVn.Month, d);
-                var schedule = EmployeeWorkSchedule.Create(trainerEmp.Id, afternoon.Id, workDate);
-                schedule.Approve(adminId);
-                trainerSchedules.Add(schedule);
+                var oldScheduleIds = oldSchedules.Select(s => s.Id).ToList();
+                var oldRecords = await context.EmployeeAttendanceRecords
+                    .Where(a => oldScheduleIds.Contains(a.WorkScheduleId))
+                    .ToListAsync();
+                context.EmployeeAttendanceRecords.RemoveRange(oldRecords);
+                context.EmployeeWorkSchedules.RemoveRange(oldSchedules);
+                await context.SaveChangesAsync();
             }
-            await context.EmployeeWorkSchedules.AddRangeAsync(trainerSchedules);
-            await context.SaveChangesAsync();
 
-            var trainerRecords = new List<EmployeeAttendanceRecord>();
-            foreach (var sch in trainerSchedules)
+            var allSchedules = new List<EmployeeWorkSchedule>();
+            var allRecords = new List<EmployeeAttendanceRecord>();
+
+            foreach (var emp in employees)
             {
-                var checkInTime = sch.WorkDate.ToDateTime(new TimeOnly(13, 55), DateTimeKind.Utc).AddHours(-7);
-                var checkOutTime = sch.WorkDate.ToDateTime(new TimeOnly(22, 5), DateTimeKind.Utc).AddHours(-7);
-
-                var att = EmployeeAttendanceRecord.Create(sch.Id, AttendanceStatus.Present);
-                att.MarkCheckIn(checkInTime, AttendanceMethod.FaceRecognition, 0);
-                att.MarkCheckOut(checkOutTime, AttendanceMethod.FaceRecognition, 0);
-                trainerRecords.Add(att);
-            }
-            await context.EmployeeAttendanceRecords.AddRangeAsync(trainerRecords);
-            await context.SaveChangesAsync();
-        }
-
-        if (trainerEmp != null)
-        {
-            var trainerEntity = await context.Trainers.FirstOrDefaultAsync(t => t.EmployeeId == trainerEmp.Id);
-            if (trainerEntity != null)
-            {
-                var startUtc = monthStart.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc).AddHours(-7);
-                var existingSessionsCount = await context.TrainingSessions
-                    .CountAsync(s => s.TrainerId == trainerEntity.Id && s.StartAt >= startUtc);
-
-                if (existingSessionsCount == 0)
+                profiles.TryGetValue(emp.EmployeeCode, out var profile);
+                if (profile.attendedDays == 0)
                 {
-                    var trainingSessions = new List<TrainingSession>();
-                    for (var s = 1; s <= 30; s++)
-                    {
-                        var day = (s % 26) + 1;
-                        var sessionDate = new DateOnly(todayVn.Year, todayVn.Month, day);
-                        var sessionStart = sessionDate.ToDateTime(new TimeOnly(15, 0), DateTimeKind.Utc).AddHours(-7);
-                        var sessionEnd = sessionDate.ToDateTime(new TimeOnly(16, 0), DateTimeKind.Utc).AddHours(-7);
+                    profile = (26, [], emp.Position == "TRAINER" ? 20 : 0, 10000000m, false);
+                }
 
-                        var session = TrainingSession.Create(Guid.NewGuid(), trainerEntity.Id, Guid.NewGuid(), sessionStart, sessionEnd, 200000m);
-                        session.Complete(trainerEntity.Id);
-                        trainingSessions.Add(session);
-                    }
-                    await context.TrainingSessions.AddRangeAsync(trainingSessions);
-                    await context.SaveChangesAsync();
+                var isTrainer = emp.Position == "TRAINER";
+                var shift = isTrainer ? afternoon : morning;
+                var shiftStart = isTrainer ? new TimeOnly(14, 0) : new TimeOnly(6, 0);
+                var shiftEnd = isTrainer ? new TimeOnly(22, 0) : new TimeOnly(14, 0);
+
+                var empSchedules = new List<EmployeeWorkSchedule>();
+                var dayLimit = Math.Min(26, monthEnd.Day);
+                for (var d = 1; d <= dayLimit; d++)
+                {
+                    var workDate = new DateOnly(todayVn.Year, todayVn.Month, d);
+                    var schedule = EmployeeWorkSchedule.Create(emp.Id, shift.Id, workDate);
+                    schedule.Approve(adminId);
+                    empSchedules.Add(schedule);
+                }
+                allSchedules.AddRange(empSchedules);
+            }
+
+            await context.EmployeeWorkSchedules.AddRangeAsync(allSchedules);
+            await context.SaveChangesAsync();
+
+            foreach (var emp in employees)
+            {
+                profiles.TryGetValue(emp.EmployeeCode, out var profile);
+                if (profile.attendedDays == 0) profile.attendedDays = 26;
+
+                var isTrainer = emp.Position == "TRAINER";
+                var shiftStart = isTrainer ? new TimeOnly(14, 0) : new TimeOnly(6, 0);
+                var shiftEnd = isTrainer ? new TimeOnly(22, 0) : new TimeOnly(14, 0);
+
+                var empSchedules = allSchedules.Where(s => s.EmployeeId == emp.Id).OrderBy(s => s.WorkDate).ToList();
+                var attendCount = Math.Min(profile.attendedDays, empSchedules.Count);
+
+                for (var i = 0; i < attendCount; i++)
+                {
+                    var sch = empSchedules[i];
+                    var isLate = profile.lateDays != null && profile.lateDays.Contains(i + 1);
+                    var checkInTime = sch.WorkDate.ToDateTime(isLate ? shiftStart.AddMinutes(15) : shiftStart.AddMinutes(-5), DateTimeKind.Utc).AddHours(-7);
+                    var checkOutTime = sch.WorkDate.ToDateTime(shiftEnd.AddMinutes(5), DateTimeKind.Utc).AddHours(-7);
+
+                    var att = EmployeeAttendanceRecord.Create(sch.Id, AttendanceStatus.Present);
+                    att.MarkCheckIn(checkInTime, AttendanceMethod.FaceRecognition, isLate ? 15 : 0);
+                    att.MarkCheckOut(checkOutTime, AttendanceMethod.FaceRecognition, 0);
+                    allRecords.Add(att);
                 }
             }
+
+            await context.EmployeeAttendanceRecords.AddRangeAsync(allRecords);
+            await context.SaveChangesAsync();
         }
 
-        if (recEmp != null)
+        foreach (var emp in employees.Where(e => e.Position == "TRAINER"))
         {
-            var startUtc = monthStart.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc).AddHours(-7);
-            if (!await context.Violations.AnyAsync(v => v.EmployeeId == recEmp.Id && v.OccurredAt >= startUtc))
+            var trainerEntity = await context.Trainers.FirstOrDefaultAsync(t => t.EmployeeId == emp.Id);
+            if (trainerEntity == null)
             {
-                var penaltyRule = await context.PenaltyRules.FirstOrDefaultAsync(r => r.Status == PenaltyRuleStatus.Active)
-                    ?? await context.PenaltyRules.FirstOrDefaultAsync();
+                trainerEntity = Trainer.Create(emp.Id, specId, 3, 1.2m, "HLV chuyên nghiệp GymX");
+                await context.Trainers.AddAsync(trainerEntity);
+                await context.SaveChangesAsync();
+            }
 
-                if (penaltyRule != null)
+            profiles.TryGetValue(emp.EmployeeCode, out var profile);
+            var targetSessions = profile.ptSessions > 0 ? profile.ptSessions : 25;
+
+            var existingCount = await context.TrainingSessions
+                .CountAsync(s => s.TrainerId == trainerEntity.Id && s.StartAt >= startUtc);
+
+            if (existingCount < targetSessions)
+            {
+                var needed = targetSessions - existingCount;
+                var sessionsToAdd = new List<TrainingSession>();
+                for (var s = 1; s <= needed; s++)
                 {
-                    var violation = Violation.Create(
-                        "VIO-202611-0001",
-                        recEmp.Id,
-                        penaltyRule.Id,
-                        100000m,
-                        todayVn.AddDays(-2).ToDateTime(new TimeOnly(6, 15), DateTimeKind.Utc).AddHours(-7),
-                        adminId,
+                    var day = ((existingCount + s) % 26) + 1;
+                    var sessionDate = new DateOnly(todayVn.Year, todayVn.Month, day);
+                    var sessionStart = sessionDate.ToDateTime(new TimeOnly(15, 0), DateTimeKind.Utc).AddHours(-7);
+                    var sessionEnd = sessionDate.ToDateTime(new TimeOnly(16, 0), DateTimeKind.Utc).AddHours(-7);
+
+                    var session = TrainingSession.Create(Guid.NewGuid(), trainerEntity.Id, Guid.NewGuid(), sessionStart, sessionEnd, 200000m);
+                    session.Complete(trainerEntity.Id);
+                    sessionsToAdd.Add(session);
+                }
+                await context.TrainingSessions.AddRangeAsync(sessionsToAdd);
+                await context.SaveChangesAsync();
+            }
+        }
+
+        var invoiceSeq = 8000;
+        foreach (var emp in employees)
+        {
+            profiles.TryGetValue(emp.EmployeeCode, out var profile);
+            var targetRevenue = profile.salesRevenue > 0 ? profile.salesRevenue : 10000000m;
+
+            var existingRevenue = await context.Invoices
+                .Where(i => i.CreatorId == emp.UserId && i.Status == InvoiceStatus.Paid && i.IssuedAt >= startUtc)
+                .SumAsync(i => i.TotalAmount);
+
+            if (existingRevenue < targetRevenue)
+            {
+                var neededRevenue = targetRevenue - existingRevenue;
+                var invoiceCount = Math.Max(1, (int)(neededRevenue / 5000000m));
+                var perInvoice = Math.Round(neededRevenue / invoiceCount, 0);
+
+                var empInvoices = new List<Invoice>();
+                for (var k = 0; k < invoiceCount; k++)
+                {
+                    var day = ((k * 3) % 25) + 1;
+                    var invDate = new DateOnly(todayVn.Year, todayVn.Month, day);
+                    var issuedAt = invDate.ToDateTime(new TimeOnly(10, 30), DateTimeKind.Utc).AddHours(-7);
+                    var invNumber = $"INV-{invDate:yyyyMMdd}-{invoiceSeq++:D4}";
+
+                    var refType = emp.Position == "TRAINER" ? "PT_SESSION" : "PACKAGE";
+                    empInvoices.Add(Invoice.CreatePaid(
+                        invNumber,
+                        refType,
+                        Guid.NewGuid(),
+                        perInvoice,
+                        perInvoice,
+                        issuedAt,
                         null,
-                        null,
-                        "Đi trễ 15 phút không báo trước");
-                    await context.Violations.AddAsync(violation);
-                    await context.SaveChangesAsync();
+                        emp.Position == "TRAINER" ? "Gói tập kèm PT cá nhân" : "Gói tập hội viên GymX",
+                        "0912345678",
+                        emp.UserId));
+                }
+                await context.Invoices.AddRangeAsync(empInvoices);
+                await context.SaveChangesAsync();
+            }
+        }
+
+        foreach (var emp in employees)
+        {
+            profiles.TryGetValue(emp.EmployeeCode, out var profile);
+            if (profile.hasViolation)
+            {
+                var existingViolation = await context.Violations
+                    .AnyAsync(v => v.EmployeeId == emp.Id && v.OccurredAt >= startUtc);
+
+                if (!existingViolation)
+                {
+                    var penaltyRule = await context.PenaltyRules.FirstOrDefaultAsync(r => r.Status == PenaltyRuleStatus.Active)
+                        ?? await context.PenaltyRules.FirstOrDefaultAsync();
+
+                    if (penaltyRule != null)
+                    {
+                        var violation = Violation.Create(
+                            $"VIO-{todayVn:yyyyMMdd}-{emp.EmployeeCode}",
+                            emp.Id,
+                            penaltyRule.Id,
+                            100000m,
+                            todayVn.AddDays(-3).ToDateTime(new TimeOnly(6, 15), DateTimeKind.Utc).AddHours(-7),
+                            adminId,
+                            null,
+                            null,
+                            "Đi trễ ca sáng 15 phút không có lý do chính đáng");
+                        await context.Violations.AddAsync(violation);
+                        await context.SaveChangesAsync();
+                    }
                 }
             }
         }
@@ -255,117 +365,6 @@ public static class FinanceSeeder
 
             await context.Expenses.AddRangeAsync(expenses);
             await context.SaveChangesAsync();
-        }
-
-        if (!await context.Invoices.AnyAsync())
-        {
-            var invoices = new List<Invoice>();
-            var seq = 1;
-            var todayBaseUtc = todayVn.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc).AddHours(-7);
-
-            var todaySlots = new[]
-            {
-                new { Hour = 7,  Count = 3, RefType = "DAY_PASS", Total = 150000m, Name = "Vé tập ngày" },
-                new { Hour = 9,  Count = 4, RefType = "PACKAGE",  Total = 3200000m, Name = "Gói 1 tháng Tiêu chuẩn" },
-                new { Hour = 11, Count = 2, RefType = "PACKAGE",  Total = 2400000m, Name = "Gói 3 tháng Khỏe đẹp" },
-                new { Hour = 14, Count = 3, RefType = "PT_SESSION", Total = 1800000m, Name = "Kèm PT 1:1" },
-                new { Hour = 16, Count = 4, RefType = "PACKAGE",  Total = 4000000m, Name = "Gói 6 tháng Chuyên sâu" },
-                new { Hour = 18, Count = 5, RefType = "DAY_PASS", Total = 250000m, Name = "Vé tập ngày cao điểm" },
-                new { Hour = 20, Count = 4, RefType = "PACKAGE",  Total = 5000000m, Name = "Gói VIP 12 tháng" },
-            };
-
-            foreach (var slot in todaySlots)
-            {
-                var perInvoice = Math.Round(slot.Total / slot.Count, 0);
-                var invoiceCreatorId = slot.RefType == "PT_SESSION" ? trainerId : recId;
-
-                for (var i = 0; i < slot.Count; i++)
-                {
-                    var issuedAtUtc = todayBaseUtc.AddHours(slot.Hour).AddMinutes(10 * (i + 1));
-                    var invoiceNumber = $"INV-{todayVn:yyyyMMdd}-{seq:D4}";
-                    seq++;
-
-                    invoices.Add(Invoice.CreatePaid(
-                        invoiceNumber,
-                        slot.RefType,
-                        Guid.NewGuid(),
-                        perInvoice,
-                        perInvoice,
-                        issuedAtUtc,
-                        null,
-                        slot.Name,
-                        "0987654321",
-                        invoiceCreatorId));
-                }
-            }
-
-            for (var d = 1; d <= 6; d++)
-            {
-                var pastDate = todayVn.AddDays(-d);
-                var pastBaseUtc = pastDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc).AddHours(-7);
-
-                for (var t = 0; t < 3; t++)
-                {
-                    var hour = 8 + t * 4;
-                    var amount = 500000m + (t * 250000m);
-                    var refType = t % 2 == 0 ? "PACKAGE" : "PT_SESSION";
-                    var pastCreatorId = refType == "PT_SESSION" ? trainerId : recId;
-                    var issuedAtUtc = pastBaseUtc.AddHours(hour).AddMinutes(15);
-                    var invoiceNumber = $"INV-{pastDate:yyyyMMdd}-{seq:D4}";
-                    seq++;
-
-                    invoices.Add(Invoice.CreatePaid(
-                        invoiceNumber,
-                        refType,
-                        Guid.NewGuid(),
-                        amount,
-                        amount,
-                        issuedAtUtc,
-                        null,
-                        "Hội viên GymX",
-                        "0912345678",
-                        pastCreatorId));
-                }
-            }
-
-            for (var m = 1; m <= 10; m++)
-            {
-                var priorDate = todayVn.AddMonths(-1).AddDays(m * 2);
-                var priorBaseUtc = priorDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc).AddHours(-7);
-                var invoiceNumber = $"INV-{priorDate:yyyyMMdd}-{seq:D4}";
-                seq++;
-
-                invoices.Add(Invoice.CreatePaid(
-                    invoiceNumber,
-                    "PACKAGE",
-                    Guid.NewGuid(),
-                    1000000m,
-                    1000000m,
-                    priorBaseUtc.AddHours(14),
-                    null,
-                    "Hội viên tháng trước",
-                    "0909090909",
-                    recId));
-            }
-
-            await context.Invoices.AddRangeAsync(invoices);
-            await context.SaveChangesAsync();
-        }
-        else if (adminUser != null)
-        {
-            var unassignedInvoices = await context.Invoices
-                .Where(i => i.CreatorId == adminUser.Id || i.CreatorId == null)
-                .ToListAsync();
-
-            if (unassignedInvoices.Count > 0)
-            {
-                foreach (var inv in unassignedInvoices)
-                {
-                    var targetCreator = inv.ReferenceType == "PT_SESSION" ? trainerId : recId;
-                    inv.AssignCreator(targetCreator);
-                }
-                await context.SaveChangesAsync();
-            }
         }
     }
 }
