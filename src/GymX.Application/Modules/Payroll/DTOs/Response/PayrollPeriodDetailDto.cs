@@ -9,6 +9,11 @@ public sealed class PayrollPeriodDetailDto
     public string SalaryFormulaName { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
     public decimal TotalSalary { get; init; }
+    public decimal TotalBaseSalary { get; init; }
+    public decimal TotalPtAmount { get; init; }
+    public decimal TotalCommissionAmount { get; init; }
+    public decimal TotalKpiBonusAmount { get; init; }
+    public decimal TotalPenaltyAmount { get; init; }
     public int TotalEmployees { get; init; }
     public DateTime? CalculatedAt { get; init; }
     public DateTime? ConfirmedAt { get; init; }

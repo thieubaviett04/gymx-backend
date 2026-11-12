@@ -56,8 +56,7 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
         builder.HasKey(e => e.Id);
 
         builder.HasIndex(e => e.ExpenseCode)
-            .IsUnique()
-            .HasFilter("\"IsDeleted\" = false");
+            .IsUnique();
 
         builder.HasIndex(e => e.Category);
         builder.HasIndex(e => e.ExpenseDate);

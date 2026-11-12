@@ -66,8 +66,7 @@ namespace GymX.Infrastructure.Migrations
                 name: "IX_salary_formulas_Name",
                 table: "salary_formulas",
                 column: "Name",
-                unique: true,
-                filter: "\"IsDeleted\" = false");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_salary_formulas_Status",

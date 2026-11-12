@@ -1,3 +1,4 @@
+using GymX.Application.Modules.Payroll.Commands.AdjustPayslipKpiBonus;
 using GymX.Application.Modules.Payroll.Commands.CalculatePayroll;
 using GymX.Application.Modules.Payroll.Commands.LockPayrollPeriod;
 using GymX.Application.Modules.Payroll.DTOs.Request;
@@ -121,5 +122,26 @@ public class PayrollController(ISender sender) : ControllerBase
         }
 
         return NotFound(new { error = result.Error });
+    }
+
+    [HttpPatch("payslips/{id:guid}/kpi-bonus")]
+    public async Task<IActionResult> AdjustKpiBonus(
+        [FromRoute] Guid id,
+        [FromBody] AdjustPayslipKpiBonusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await sender.Send(new AdjustPayslipKpiBonusCommand(id, request.KpiBonusAmount, request.Note), cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            return Ok(new { success = true, data = result.Value });
+        }
+
+        return result.Error.Code switch
+        {
+            "Payroll.PayslipNotFound" => NotFound(new { error = result.Error }),
+            "Payroll.PeriodAlreadyConfirmed" => Conflict(new { error = result.Error }),
+            _ => BadRequest(new { error = result.Error })
+        };
     }
 }

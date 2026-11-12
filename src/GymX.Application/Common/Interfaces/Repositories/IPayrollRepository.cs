@@ -25,4 +25,9 @@ public interface IPayrollRepository : IGenericRepository<PayrollPeriod>
     Task<PayslipDetailDto?> GetPayslipDetailByIdAsync(Guid payslipId, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<PayslipSummaryDto>> GetMyPayslipsAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<List<Payslip>> GetPayslipsByPeriodIdAsync(Guid periodId, CancellationToken cancellationToken = default);
+    Task<Result<PayslipDetailDto>> AdjustPayslipKpiBonusAsync(
+        Guid payslipId,
+        decimal kpiBonusAmount,
+        string? note,
+        CancellationToken cancellationToken = default);
 }

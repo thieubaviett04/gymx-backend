@@ -90,8 +90,7 @@ public class SalaryFormulaConfiguration : IEntityTypeConfiguration<SalaryFormula
         builder.ToTable("salary_formulas");
 
         builder.HasIndex(f => f.Name)
-            .IsUnique()
-            .HasFilter("\"IsDeleted\" = false");
+            .IsUnique();
 
         builder.HasIndex(f => f.TargetRole);
         builder.HasIndex(f => f.Status);
@@ -137,6 +136,26 @@ public class PayslipConfiguration : IEntityTypeConfiguration<Payslip>
         builder.Property(p => p.BonusAmount).HasColumnType("numeric(12,2)");
         builder.Property(p => p.PenaltyAmount).HasColumnType("numeric(12,2)");
         builder.Property(p => p.TotalSalary).HasColumnType("numeric(12,2)");
+        builder.Property(p => p.PtSessionsCount).HasDefaultValue(0);
+        builder.Property(p => p.PtTeachingAmount).HasColumnType("numeric(12,2)").HasDefaultValue(0);
+        builder.Property(p => p.SalesRevenue).HasColumnType("numeric(12,2)").HasDefaultValue(0);
+        builder.Property(p => p.CommissionAmount).HasColumnType("numeric(12,2)").HasDefaultValue(0);
+        builder.Property(p => p.KpiBonusAmount).HasColumnType("numeric(12,2)").HasDefaultValue(0);
         builder.Property(p => p.Status).IsRequired().HasMaxLength(20);
+    }
+}
+
+public class PayrollBonusConfiguration : IEntityTypeConfiguration<PayrollBonus>
+{
+    public void Configure(EntityTypeBuilder<PayrollBonus> builder)
+    {
+        builder.ToTable("payroll_bonuses");
+
+        builder.HasIndex(b => new { b.EmployeeId, b.Month, b.Year });
+        builder.HasIndex(b => new { b.Month, b.Year });
+
+        builder.Property(b => b.BonusType).IsRequired().HasMaxLength(50);
+        builder.Property(b => b.Amount).HasColumnType("numeric(12,2)").IsRequired();
+        builder.Property(b => b.Reason).IsRequired().HasMaxLength(500);
     }
 }

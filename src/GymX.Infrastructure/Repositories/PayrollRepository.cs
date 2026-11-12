@@ -83,17 +83,54 @@ public class PayrollRepository(ApplicationDbContext context)
             .Select(g => new { EmployeeId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.EmployeeId, x => x.Count, cancellationToken);
 
-        var attendanceStatsMap = await (from att in Context.EmployeeAttendanceRecords.AsNoTracking()
-                                        join sch in Context.EmployeeWorkSchedules.AsNoTracking() on att.WorkScheduleId equals sch.Id
-                                        where sch.WorkDate >= periodStart && sch.WorkDate <= periodEnd
-                                        group att by sch.EmployeeId into g
-                                        select new
-                                        {
-                                            EmployeeId = g.Key,
-                                            LateCount = g.Count(a => a.LateMinutes > 0),
-                                            EarlyLeaveCount = g.Count(a => a.EarlyLeaveMinutes > 0),
-                                            AttendedCount = g.Count(a => a.CheckInAt != null)
-                                        }).ToDictionaryAsync(x => x.EmployeeId, cancellationToken);
+        var attendanceRecords = await (from att in Context.EmployeeAttendanceRecords.AsNoTracking()
+                                       join sch in Context.EmployeeWorkSchedules.AsNoTracking() on att.WorkScheduleId equals sch.Id
+                                       join shift in Context.ShiftDefinitions.AsNoTracking() on sch.ShiftId equals shift.Id into shifts
+                                       from shift in shifts.DefaultIfEmpty()
+                                       where sch.WorkDate >= periodStart && sch.WorkDate <= periodEnd
+                                       select new
+                                       {
+                                           sch.EmployeeId,
+                                           att.CheckInAt,
+                                           att.CheckOutAt,
+                                           att.LateMinutes,
+                                           att.EarlyLeaveMinutes,
+                                           ShiftStartTime = shift != null ? (TimeOnly?)shift.StartTime : null,
+                                           ShiftEndTime = shift != null ? (TimeOnly?)shift.EndTime : null
+                                       }).ToListAsync(cancellationToken);
+
+        var attendanceStatsMap = attendanceRecords
+            .GroupBy(a => a.EmployeeId)
+            .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    var attended = g.Where(x => x.CheckInAt != null).ToList();
+                    var totalHours = attended.Sum(x =>
+                    {
+                        if (x.CheckInAt != null && x.CheckOutAt != null && x.CheckOutAt > x.CheckInAt)
+                        {
+                            return Math.Round((decimal)(x.CheckOutAt.Value - x.CheckInAt.Value).TotalHours, 2);
+                        }
+                        if (x.ShiftStartTime != null && x.ShiftEndTime != null)
+                        {
+                            if (x.ShiftEndTime > x.ShiftStartTime)
+                            {
+                                return (decimal)(x.ShiftEndTime.Value - x.ShiftStartTime.Value).TotalHours;
+                            }
+                            return (decimal)(24 - (x.ShiftStartTime.Value - x.ShiftEndTime.Value).TotalHours);
+                        }
+                        return 4.0m;
+                    });
+
+                    return new
+                    {
+                        LateCount = g.Count(x => x.LateMinutes > 0),
+                        EarlyLeaveCount = g.Count(x => x.EarlyLeaveMinutes > 0),
+                        AttendedCount = attended.Count,
+                        TotalWorkedHours = totalHours
+                    };
+                });
 
         var employeeIds = activeEmployees.Select(e => e.Id).ToList();
         var trainersMap = await Context.Trainers
@@ -121,11 +158,32 @@ public class PayrollRepository(ApplicationDbContext context)
             .Select(g => new { EmployeeId = g.Key, TotalFine = g.Sum(v => v.FineAmount) })
             .ToDictionaryAsync(x => x.EmployeeId, x => x.TotalFine, cancellationToken);
 
+        var employeeUserIds = activeEmployees.Select(e => e.UserId).Distinct().ToList();
+        var salesRevenueMap = await Context.Invoices
+            .AsNoTracking()
+            .Where(i => i.CreatorId != null &&
+                        employeeUserIds.Contains(i.CreatorId.Value) &&
+                        i.Status == InvoiceStatus.Paid &&
+                        i.IssuedAt >= periodStartUtc &&
+                        i.IssuedAt <= periodEndUtc)
+            .GroupBy(i => i.CreatorId!.Value)
+            .Select(g => new { UserId = g.Key, TotalRevenue = g.Sum(i => i.TotalAmount) })
+            .ToDictionaryAsync(x => x.UserId, x => x.TotalRevenue, cancellationToken);
+
         var roleFormulas = await Context.SalaryFormulas
             .AsNoTracking()
             .Where(f => f.Status == EmployeeStatus.Active && f.EffectiveDate <= periodEnd)
             .OrderByDescending(f => f.EffectiveDate)
             .ToListAsync(cancellationToken);
+
+        var bonuses = await Context.PayrollBonuses
+            .AsNoTracking()
+            .Where(b => b.Month == month && b.Year == year)
+            .ToListAsync(cancellationToken);
+
+        var bonusesMap = bonuses
+            .GroupBy(b => b.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.Sum(b => b.Amount));
 
         foreach (var employee in activeEmployees)
         {
@@ -136,19 +194,70 @@ public class PayrollRepository(ApplicationDbContext context)
             schedulesCountMap.TryGetValue(employee.Id, out var scheduledShifts);
             attendanceStatsMap.TryGetValue(employee.Id, out var attendanceStats);
 
-            var workedShifts = scheduledShifts > 0
-                ? scheduledShifts
-                : (attendanceStats?.AttendedCount > 0 ? attendanceStats.AttendedCount : formula.StandardWorkDays);
-
+            var hasAttendanceRecords = attendanceStats != null;
             var lateCount = attendanceStats?.LateCount ?? 0;
             var earlyLeaveCount = attendanceStats?.EarlyLeaveCount ?? 0;
 
-            var baseSalaryRate = employee.BaseSalaryRate > 0 ? employee.BaseSalaryRate : formula.BaseRate;
+            var isShiftRate = string.Equals(formula.BaseRateType, SalaryBaseRateType.PerShift, StringComparison.OrdinalIgnoreCase);
+            var isHourlyRate = string.Equals(formula.BaseRateType, SalaryBaseRateType.Hourly, StringComparison.OrdinalIgnoreCase);
+            var unitName = isShiftRate ? "ca" : (isHourlyRate ? "giờ" : "ngày");
+
+            int workedShifts;
+            decimal workedHours;
+
+            if (hasAttendanceRecords)
+            {
+                workedShifts = attendanceStats!.AttendedCount;
+                workedHours = attendanceStats.TotalWorkedHours;
+            }
+            else if (scheduledShifts > 0)
+            {
+                workedShifts = scheduledShifts;
+                workedHours = scheduledShifts * 4m;
+            }
+            else
+            {
+                if (isShiftRate || isHourlyRate)
+                {
+                    workedShifts = 0;
+                    workedHours = 0m;
+                }
+                else
+                {
+                    var standardDays = formula.StandardWorkDays > 0 ? formula.StandardWorkDays : 26;
+                    workedShifts = standardDays;
+                    workedHours = standardDays * 8m;
+                }
+            }
+
+            var workedUnits = isHourlyRate ? (int)Math.Round(workedHours) : workedShifts;
+
+            decimal baseSalaryRate;
+            if (isHourlyRate)
+            {
+                baseSalaryRate = (employee.BaseSalaryRate > 0 && employee.BaseSalaryRate <= 500000m)
+                    ? employee.BaseSalaryRate
+                    : formula.BaseRate;
+            }
+            else if (isShiftRate)
+            {
+                baseSalaryRate = (employee.BaseSalaryRate > 0 && employee.BaseSalaryRate <= 1000000m)
+                    ? employee.BaseSalaryRate
+                    : formula.BaseRate;
+            }
+            else
+            {
+                baseSalaryRate = employee.BaseSalaryRate > 0 ? employee.BaseSalaryRate : formula.BaseRate;
+            }
 
             decimal calculatedBaseSalary;
-            if (formula.BaseRateType == SalaryBaseRateType.PerShift)
+            if (isShiftRate)
             {
                 calculatedBaseSalary = baseSalaryRate * workedShifts;
+            }
+            else if (isHourlyRate)
+            {
+                calculatedBaseSalary = Math.Round(baseSalaryRate * workedHours, 2);
             }
             else
             {
@@ -162,21 +271,37 @@ public class PayrollRepository(ApplicationDbContext context)
                 completedSessionsMap.TryGetValue(trainerId, out ptSessionsCount);
             }
 
-            var bonusAmount = ptSessionsCount * formula.PricePerPtSession;
+            var teachingAmount = ptSessionsCount * formula.PricePerPtSession;
+
+            salesRevenueMap.TryGetValue(employee.UserId, out var salesRevenue);
+            var commissionAmount = formula.SalesCommissionPercent > 0
+                ? Math.Round(salesRevenue * (formula.SalesCommissionPercent / 100m), 2)
+                : 0m;
+
+            var bonusAmount = teachingAmount + commissionAmount;
 
             violationsMap.TryGetValue(employee.Id, out var penaltyAmount);
 
-            var note = $"Công thức: {formula.Name}. Số ca: {workedShifts}/{formula.StandardWorkDays}. PT: {ptSessionsCount} buổi.";
+            var note = $"Công thức: {formula.Name}. Lương cứng: {calculatedBaseSalary:N0} ₫ ({workedUnits}/{formula.StandardWorkDays} {unitName}). Tiền dạy PT: {teachingAmount:N0} ₫ ({ptSessionsCount} buổi). Hoa hồng bán: {commissionAmount:N0} ₫ ({formula.SalesCommissionPercent}% của {salesRevenue:N0} ₫). Phạt: -{penaltyAmount:N0} ₫.";
 
-            if (existingPayslipsMap.TryGetValue(employee.Id, out var existingPayslip))
+            bonusesMap.TryGetValue(employee.Id, out var manualBonusAmount);
+            existingPayslipsMap.TryGetValue(employee.Id, out var existingPayslip);
+            var kpiBonusAmount = manualBonusAmount > 0 ? manualBonusAmount : (existingPayslip?.KpiBonusAmount ?? 0m);
+
+            if (existingPayslip != null)
             {
                 existingPayslip.UpdateCalculatedSalary(
                     calculatedBaseSalary,
-                    workedShifts,
+                    workedUnits,
                     lateCount,
                     earlyLeaveCount,
                     bonusAmount,
                     penaltyAmount,
+                    ptSessionsCount,
+                    teachingAmount,
+                    salesRevenue,
+                    commissionAmount,
+                    kpiBonusAmount,
                     note);
             }
             else
@@ -185,11 +310,16 @@ public class PayrollRepository(ApplicationDbContext context)
                     period.Id,
                     employee.Id,
                     calculatedBaseSalary,
-                    workedShifts,
+                    workedUnits,
                     lateCount,
                     earlyLeaveCount,
                     bonusAmount,
                     penaltyAmount,
+                    ptSessionsCount,
+                    teachingAmount,
+                    salesRevenue,
+                    commissionAmount,
+                    kpiBonusAmount,
                     note);
 
                 await Context.Payslips.AddAsync(newPayslip, cancellationToken);
@@ -262,6 +392,11 @@ public class PayrollRepository(ApplicationDbContext context)
             {
                 PeriodId = g.Key,
                 TotalSalary = g.Sum(ps => ps.TotalSalary),
+                TotalBaseSalary = g.Sum(ps => ps.BaseSalary),
+                TotalPtAmount = g.Sum(ps => ps.PtTeachingAmount),
+                TotalCommissionAmount = g.Sum(ps => ps.CommissionAmount),
+                TotalKpiBonusAmount = g.Sum(ps => ps.KpiBonusAmount),
+                TotalPenaltyAmount = g.Sum(ps => ps.PenaltyAmount),
                 TotalEmployees = g.Count()
             })
             .ToDictionaryAsync(x => x.PeriodId, cancellationToken);
@@ -278,6 +413,11 @@ public class PayrollRepository(ApplicationDbContext context)
                 SalaryFormulaName = item.Formula.Name,
                 Status = item.Period.Status,
                 TotalSalary = stats?.TotalSalary ?? 0m,
+                TotalBaseSalary = stats?.TotalBaseSalary ?? 0m,
+                TotalPtAmount = stats?.TotalPtAmount ?? 0m,
+                TotalCommissionAmount = stats?.TotalCommissionAmount ?? 0m,
+                TotalKpiBonusAmount = stats?.TotalKpiBonusAmount ?? 0m,
+                TotalPenaltyAmount = stats?.TotalPenaltyAmount ?? 0m,
                 TotalEmployees = stats?.TotalEmployees ?? 0,
                 CalculatedAt = item.Period.CalculatedAt,
                 ConfirmedAt = item.Period.ConfirmedAt,
@@ -327,7 +467,12 @@ public class PayrollRepository(ApplicationDbContext context)
                                   PenaltyAmount = ps.PenaltyAmount,
                                   TotalSalary = ps.TotalSalary,
                                   Status = ps.Status,
-                                  GeneratedAt = ps.GeneratedAt
+                                  GeneratedAt = ps.GeneratedAt,
+                                  PtSessionsCount = ps.PtSessionsCount,
+                                  PtTeachingAmount = ps.PtTeachingAmount,
+                                  SalesRevenue = ps.SalesRevenue,
+                                  CommissionAmount = ps.CommissionAmount,
+                                  KpiBonusAmount = ps.KpiBonusAmount
                               }).ToListAsync(cancellationToken);
 
         return new PayrollPeriodDetailDto
@@ -339,6 +484,11 @@ public class PayrollRepository(ApplicationDbContext context)
             SalaryFormulaName = periodRecord.Formula.Name,
             Status = periodRecord.Period.Status,
             TotalSalary = payslips.Sum(ps => ps.TotalSalary),
+            TotalBaseSalary = payslips.Sum(ps => ps.BaseSalary),
+            TotalPtAmount = payslips.Sum(ps => ps.PtTeachingAmount),
+            TotalCommissionAmount = payslips.Sum(ps => ps.CommissionAmount),
+            TotalKpiBonusAmount = payslips.Sum(ps => ps.KpiBonusAmount),
+            TotalPenaltyAmount = payslips.Sum(ps => ps.PenaltyAmount),
             TotalEmployees = payslips.Count,
             CalculatedAt = periodRecord.Period.CalculatedAt,
             ConfirmedAt = periodRecord.Period.ConfirmedAt,
@@ -402,7 +552,12 @@ public class PayrollRepository(ApplicationDbContext context)
                 PenaltyAmount = item.Payslip.PenaltyAmount,
                 TotalSalary = item.Payslip.TotalSalary,
                 Status = item.Payslip.Status,
-                GeneratedAt = item.Payslip.GeneratedAt
+                GeneratedAt = item.Payslip.GeneratedAt,
+                PtSessionsCount = item.Payslip.PtSessionsCount,
+                PtTeachingAmount = item.Payslip.PtTeachingAmount,
+                SalesRevenue = item.Payslip.SalesRevenue,
+                CommissionAmount = item.Payslip.CommissionAmount,
+                KpiBonusAmount = item.Payslip.KpiBonusAmount
             })
             .ToListAsync(cancellationToken);
 
@@ -435,7 +590,12 @@ public class PayrollRepository(ApplicationDbContext context)
                                TotalSalary = ps.TotalSalary,
                                Status = ps.Status,
                                Note = ps.Note,
-                               GeneratedAt = ps.GeneratedAt
+                               GeneratedAt = ps.GeneratedAt,
+                               PtSessionsCount = ps.PtSessionsCount,
+                               PtTeachingAmount = ps.PtTeachingAmount,
+                               SalesRevenue = ps.SalesRevenue,
+                               CommissionAmount = ps.CommissionAmount,
+                               KpiBonusAmount = ps.KpiBonusAmount
                            };
 
         return await payslipQuery.FirstOrDefaultAsync(cancellationToken);
@@ -470,7 +630,12 @@ public class PayrollRepository(ApplicationDbContext context)
                                   PenaltyAmount = ps.PenaltyAmount,
                                   TotalSalary = ps.TotalSalary,
                                   Status = ps.Status,
-                                  GeneratedAt = ps.GeneratedAt
+                                  GeneratedAt = ps.GeneratedAt,
+                                  PtSessionsCount = ps.PtSessionsCount,
+                                  PtTeachingAmount = ps.PtTeachingAmount,
+                                  SalesRevenue = ps.SalesRevenue,
+                                  CommissionAmount = ps.CommissionAmount,
+                                  KpiBonusAmount = ps.KpiBonusAmount
                               }).ToListAsync(cancellationToken);
 
         return payslips;
@@ -481,5 +646,44 @@ public class PayrollRepository(ApplicationDbContext context)
         return await Context.Payslips
             .Where(ps => ps.PayrollPeriodId == periodId)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Result<PayslipDetailDto>> AdjustPayslipKpiBonusAsync(
+        Guid payslipId,
+        decimal kpiBonusAmount,
+        string? note,
+        CancellationToken cancellationToken = default)
+    {
+        var payslip = await Context.Payslips
+            .FirstOrDefaultAsync(ps => ps.Id == payslipId, cancellationToken);
+
+        if (payslip == null)
+        {
+            return Result.Failure<PayslipDetailDto>(PayrollErrors.PayslipNotFound(payslipId));
+        }
+
+        var period = await Context.PayrollPeriods
+            .FirstOrDefaultAsync(p => p.Id == payslip.PayrollPeriodId, cancellationToken);
+
+        if (period == null)
+        {
+            return Result.Failure<PayslipDetailDto>(PayrollErrors.PeriodNotFound(payslip.PayrollPeriodId));
+        }
+
+        if (period.Status == PayrollPeriodStatus.Confirmed)
+        {
+            return Result.Failure<PayslipDetailDto>(PayrollErrors.PeriodAlreadyConfirmed);
+        }
+
+        payslip.AdjustKpiBonus(kpiBonusAmount, note);
+        await Context.SaveChangesAsync(cancellationToken);
+
+        var detail = await GetPayslipDetailByIdAsync(payslipId, cancellationToken);
+        if (detail == null)
+        {
+            return Result.Failure<PayslipDetailDto>(PayrollErrors.PayslipNotFound(payslipId));
+        }
+
+        return Result.Success(detail);
     }
 }

@@ -69,6 +69,7 @@ namespace GymX.Infrastructure.Persistence
         public DbSet<SalaryFormula> SalaryFormulas => Set<SalaryFormula>();
         public DbSet<PayrollPeriod> PayrollPeriods => Set<PayrollPeriod>();
         public DbSet<Payslip> Payslips => Set<Payslip>();
+        public DbSet<PayrollBonus> PayrollBonuses => Set<PayrollBonus>();
 
         public DbSet<Notification> Notifications => Set<Notification>();
     }

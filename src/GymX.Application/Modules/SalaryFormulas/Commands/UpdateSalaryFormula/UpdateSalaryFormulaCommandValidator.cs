@@ -32,7 +32,26 @@ public sealed class UpdateSalaryFormulaCommandValidator : AbstractValidator<Upda
             .GreaterThanOrEqualTo(0).WithMessage("Mức lương cơ bản phải là số không âm (>= 0).");
 
         RuleFor(x => x.StandardWorkDays)
-            .InclusiveBetween(1, 31).WithMessage("Số ngày công chuẩn trong tháng phải từ 1 đến 31 ngày.");
+            .Must((cmd, days) =>
+            {
+                var type = cmd.BaseRateType?.Trim().ToUpperInvariant();
+                return type switch
+                {
+                    SalaryBaseRateType.PerShift => days is >= 1 and <= 100,
+                    SalaryBaseRateType.Hourly => days is >= 1 and <= 500,
+                    _ => days is >= 1 and <= 31
+                };
+            })
+            .WithMessage(cmd =>
+            {
+                var type = cmd.BaseRateType?.Trim().ToUpperInvariant();
+                return type switch
+                {
+                    SalaryBaseRateType.PerShift => "Số ca chuẩn trong tháng phải từ 1 đến 100 ca.",
+                    SalaryBaseRateType.Hourly => "Số giờ chuẩn trong tháng phải từ 1 đến 500 giờ.",
+                    _ => "Số ngày công chuẩn trong tháng phải từ 1 đến 31 ngày."
+                };
+            });
 
         RuleFor(x => x.PricePerPtSession)
             .GreaterThanOrEqualTo(0).WithMessage("Đơn giá buổi dạy PT phải là số không âm (>= 0).");

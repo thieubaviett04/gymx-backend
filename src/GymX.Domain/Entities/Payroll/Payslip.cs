@@ -18,9 +18,29 @@ public class Payslip : EntityAuditBase
     public string? Note { get; private set; }
     public DateTime GeneratedAt { get; private set; }
 
+    public int PtSessionsCount { get; private set; }
+    public decimal PtTeachingAmount { get; private set; }
+    public decimal SalesRevenue { get; private set; }
+    public decimal CommissionAmount { get; private set; }
+    public decimal KpiBonusAmount { get; private set; }
+
     protected Payslip() { }
 
-    public static Payslip Create(Guid payrollPeriodId, Guid employeeId, decimal baseSalary, int workedShifts, int lateCount, int earlyLeaveCount, decimal bonusAmount, decimal penaltyAmount, string? note = null)
+    public static Payslip Create(
+        Guid payrollPeriodId,
+        Guid employeeId,
+        decimal baseSalary,
+        int workedShifts,
+        int lateCount,
+        int earlyLeaveCount,
+        decimal bonusAmount,
+        decimal penaltyAmount,
+        int ptSessionsCount = 0,
+        decimal ptTeachingAmount = 0m,
+        decimal salesRevenue = 0m,
+        decimal commissionAmount = 0m,
+        decimal kpiBonusAmount = 0m,
+        string? note = null)
     {
         var total = baseSalary + bonusAmount - penaltyAmount;
         if (total < 0) total = 0;
@@ -35,6 +55,11 @@ public class Payslip : EntityAuditBase
             EarlyLeaveCount = earlyLeaveCount,
             BonusAmount = bonusAmount,
             PenaltyAmount = penaltyAmount,
+            PtSessionsCount = ptSessionsCount,
+            PtTeachingAmount = ptTeachingAmount,
+            SalesRevenue = salesRevenue,
+            CommissionAmount = commissionAmount,
+            KpiBonusAmount = kpiBonusAmount,
             TotalSalary = total,
             Note = note,
             Status = PayslipStatus.Draft,
@@ -42,20 +67,54 @@ public class Payslip : EntityAuditBase
         };
     }
 
-    public void UpdateCalculatedSalary(decimal baseSalary, int workedShifts, int lateCount, int earlyLeaveCount, decimal bonusAmount, decimal penaltyAmount, string? note = null)
+    public void UpdateCalculatedSalary(
+        decimal baseSalary,
+        int workedShifts,
+        int lateCount,
+        int earlyLeaveCount,
+        decimal bonusAmount,
+        decimal penaltyAmount,
+        int ptSessionsCount = 0,
+        decimal ptTeachingAmount = 0m,
+        decimal salesRevenue = 0m,
+        decimal commissionAmount = 0m,
+        decimal? kpiBonusAmount = null,
+        string? note = null)
     {
-        var total = baseSalary + bonusAmount - penaltyAmount;
+        if (kpiBonusAmount.HasValue)
+        {
+            KpiBonusAmount = kpiBonusAmount.Value;
+        }
+
+        var totalBonus = bonusAmount + (kpiBonusAmount ?? KpiBonusAmount);
+        var total = baseSalary + totalBonus - penaltyAmount;
         if (total < 0) total = 0;
 
         BaseSalary = baseSalary;
         WorkedShifts = workedShifts;
         LateCount = lateCount;
         EarlyLeaveCount = earlyLeaveCount;
-        BonusAmount = bonusAmount;
+        BonusAmount = totalBonus;
         PenaltyAmount = penaltyAmount;
+        PtSessionsCount = ptSessionsCount;
+        PtTeachingAmount = ptTeachingAmount;
+        SalesRevenue = salesRevenue;
+        CommissionAmount = commissionAmount;
         TotalSalary = total;
         Note = note;
         GeneratedAt = DateTime.UtcNow;
+    }
+
+    public void AdjustKpiBonus(decimal kpiBonusAmount, string? reason)
+    {
+        KpiBonusAmount = kpiBonusAmount < 0 ? 0 : kpiBonusAmount;
+        BonusAmount = PtTeachingAmount + CommissionAmount + KpiBonusAmount;
+        var total = BaseSalary + BonusAmount - PenaltyAmount;
+        TotalSalary = total < 0 ? 0 : total;
+        if (!string.IsNullOrWhiteSpace(reason))
+        {
+            Note = string.IsNullOrWhiteSpace(Note) ? reason.Trim() : $"{Note} | Thưởng KPI: {reason.Trim()} (+{KpiBonusAmount:N0} ₫)";
+        }
     }
 
     public void FinalizePayslip()

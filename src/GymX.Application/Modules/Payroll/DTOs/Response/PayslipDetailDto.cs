@@ -20,4 +20,9 @@ public sealed class PayslipDetailDto
     public string Status { get; init; } = string.Empty;
     public string? Note { get; init; }
     public DateTime GeneratedAt { get; init; }
+    public int PtSessionsCount { get; init; }
+    public decimal PtTeachingAmount { get; init; }
+    public decimal SalesRevenue { get; init; }
+    public decimal CommissionAmount { get; init; }
+    public decimal KpiBonusAmount { get; init; }
 }

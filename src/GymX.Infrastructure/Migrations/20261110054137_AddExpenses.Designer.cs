@@ -535,8 +535,7 @@ namespace GymX.Infrastructure.Migrations
                     b.HasIndex("Category");
 
                     b.HasIndex("ExpenseCode")
-                        .IsUnique()
-                        .HasFilter("\"IsDeleted\" = false");
+                        .IsUnique();
 
                     b.HasIndex("ExpenseDate");
 
