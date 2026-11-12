@@ -57,11 +57,11 @@ public class PayrollBonusRepository(ApplicationDbContext context)
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var term = search.Trim().ToLower();
+            var pattern = $"%{search.Trim()}%";
             query = query.Where(x =>
-                x.Employee.EmployeeCode.ToLower().Contains(term) ||
-                x.User.FullName.ToLower().Contains(term) ||
-                x.Bonus.Reason.ToLower().Contains(term));
+                EF.Functions.ILike(x.Employee.EmployeeCode, pattern) ||
+                EF.Functions.ILike(x.User.FullName, pattern) ||
+                EF.Functions.ILike(x.Bonus.Reason, pattern));
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
@@ -178,22 +178,24 @@ public class PayrollBonusRepository(ApplicationDbContext context)
     {
         if (amount <= 0)
         {
-            return Result.Failure<int>(Error.Validation("PayrollBonus.InvalidAmount", "Số tiền thưởng phải lớn hơn 0."));
+            return Result.Failure<int>(Error.Validation("PayrollBonus.InvalidAmount", "Số tiền khen thưởng phải lớn hơn 0."));
         }
 
-        if (string.IsNullOrWhiteSpace(reason))
-        {
-            return Result.Failure<int>(Error.Validation("PayrollBonus.EmptyReason", "Vui lòng nhập lý do / dịp khen thưởng."));
-        }
-
+        var now = DateTime.UtcNow.AddHours(7);
+        var currentPeriodStart = new DateOnly(now.Year, now.Month, 1);
         var periodStart = new DateOnly(year, month, 1);
+        if (periodStart < currentPeriodStart)
+        {
+            return Result.Failure<int>(Error.Validation("PayrollBonus.PastPeriodNotAllowed", "Kỳ tính lương không được là kỳ trong quá khứ. Vui lòng chọn tháng hiện tại hoặc các tháng tiếp theo."));
+        }
+
         var periodEnd = periodStart.AddMonths(1).AddDays(-1);
         var existingPeriod = await Context.PayrollPeriods
             .FirstOrDefaultAsync(p => p.PeriodStart == periodStart && p.PeriodEnd == periodEnd, cancellationToken);
 
-        if (existingPeriod != null && existingPeriod.Status == PayrollPeriodStatus.Confirmed)
+        if (existingPeriod != null && (existingPeriod.Status == PayrollPeriodStatus.Confirmed || existingPeriod.Status == "LOCKED"))
         {
-            return Result.Failure<int>(PayrollErrors.PeriodAlreadyConfirmed);
+            return Result.Failure<int>(Error.Conflict("Payroll.PeriodAlreadyConfirmed", "Kỳ tính lương này đã được chốt và khóa sổ. Không thể thêm khoản khen thưởng mới."));
         }
 
         var empQuery = Context.Employees.Where(e => !e.IsDeleted && e.EmploymentStatus == EmployeeStatus.Active);
@@ -249,7 +251,7 @@ public class PayrollBonusRepository(ApplicationDbContext context)
     {
         if (amount < 0)
         {
-            return Result.Failure<PayrollBonusDto>(Error.Validation("PayrollBonus.InvalidAmount", "Số tiền thưởng không được âm."));
+            return Result.Failure<PayrollBonusDto>(Error.Validation("PayrollBonus.InvalidAmount", "Số tiền khen thưởng không được âm."));
         }
 
         var bonus = await Context.PayrollBonuses.FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
@@ -263,9 +265,9 @@ public class PayrollBonusRepository(ApplicationDbContext context)
         var period = await Context.PayrollPeriods
             .FirstOrDefaultAsync(p => p.PeriodStart == periodStart && p.PeriodEnd == periodEnd, cancellationToken);
 
-        if (period != null && period.Status == PayrollPeriodStatus.Confirmed)
+        if (period != null && (period.Status == PayrollPeriodStatus.Confirmed || period.Status == "LOCKED"))
         {
-            return Result.Failure<PayrollBonusDto>(PayrollErrors.PeriodAlreadyConfirmed);
+            return Result.Failure<PayrollBonusDto>(Error.Conflict("Payroll.PeriodAlreadyConfirmed", "Kỳ tính lương này đã được chốt và khóa sổ. Không thể chỉnh sửa khen thưởng."));
         }
 
         bonus.Update(amount, reason, bonusType);
@@ -311,9 +313,9 @@ public class PayrollBonusRepository(ApplicationDbContext context)
         var period = await Context.PayrollPeriods
             .FirstOrDefaultAsync(p => p.PeriodStart == periodStart && p.PeriodEnd == periodEnd, cancellationToken);
 
-        if (period != null && period.Status == PayrollPeriodStatus.Confirmed)
+        if (period != null && (period.Status == PayrollPeriodStatus.Confirmed || period.Status == "LOCKED"))
         {
-            return Result.Failure<bool>(PayrollErrors.PeriodAlreadyConfirmed);
+            return Result.Failure<bool>(Error.Conflict("Payroll.PeriodAlreadyConfirmed", "Kỳ tính lương này đã được chốt và khóa sổ. Không thể xóa khen thưởng."));
         }
 
         Context.PayrollBonuses.Remove(bonus);
@@ -346,8 +348,8 @@ public class PayrollBonusRepository(ApplicationDbContext context)
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var term = search.Trim().ToLower();
-            query = query.Where(x => x.EmployeeCode.ToLower().Contains(term) || x.FullName.ToLower().Contains(term));
+            var pattern = $"%{search.Trim()}%";
+            query = query.Where(x => EF.Functions.ILike(x.EmployeeCode, pattern) || EF.Functions.ILike(x.FullName, pattern));
         }
 
         var list = await query.OrderBy(x => x.EmployeeCode).ToListAsync(cancellationToken);

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using GymX.Application.Common.Interfaces;
 using GymX.Application.Modules.Violations.Commands.CancelViolation;
 using GymX.Application.Modules.Violations.Commands.CreateViolation;
 using GymX.Application.Modules.Violations.DTOs.Request;
@@ -98,8 +99,41 @@ public class ViolationsController(ISender sender) : ControllerBase
         };
     }
 
-    [HttpPut("{id:guid}/cancel")]
-    public async Task<IActionResult> CancelViolation([FromRoute] Guid id, [FromBody] CancelViolationRequest request, CancellationToken cancellationToken = default)
+    [HttpPost("upload-evidence")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadEvidence(
+        IFormFile file,
+        [FromServices] IFileStorageService fileStorageService,
+        CancellationToken cancellationToken = default)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { error = new { code = "Violation.EvidenceFileEmpty", description = "Vui lòng chọn file bằng chứng để tải lên." } });
+        }
+
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".pdf" };
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(extension))
+        {
+            return BadRequest(new { error = new { code = "Violation.InvalidFileType", description = "Chỉ chấp nhận các tệp định dạng JPG, PNG, WEBP hoặc PDF." } });
+        }
+
+        if (file.Length > 10 * 1024 * 1024)
+        {
+            return BadRequest(new { error = new { code = "Violation.FileTooLarge", description = "Dung lượng tệp không được vượt quá 10MB." } });
+        }
+
+        await using var stream = file.OpenReadStream();
+        var evidenceUrl = await fileStorageService.SaveFileAsync(stream, file.FileName, "violations", cancellationToken);
+
+        return Ok(new { success = true, data = new { evidenceUrl }, message = "Tải lên tệp bằng chứng thành công." });
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteViolation(
+        [FromRoute] Guid id,
+        [FromQuery] string? reason = null,
+        CancellationToken cancellationToken = default)
     {
         var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!Guid.TryParse(userIdStr, out var cancelledBy))
@@ -107,11 +141,13 @@ public class ViolationsController(ISender sender) : ControllerBase
             return Unauthorized();
         }
 
-        var result = await sender.Send(new CancelViolationCommand(id, request.CancellationReason, cancelledBy), cancellationToken);
+        var cancellationReason = !string.IsNullOrWhiteSpace(reason) ? reason.Trim() : "Hủy bởi quản trị viên";
+
+        var result = await sender.Send(new CancelViolationCommand(id, cancellationReason, cancelledBy), cancellationToken);
 
         if (result.IsSuccess)
         {
-            return Ok(new { success = true, message = "Biên bản vi phạm đã được hủy thành công." });
+            return Ok(new { success = true, message = "Xóa biên bản vi phạm thành công." });
         }
 
         return result.Error.Code switch
@@ -122,4 +158,3 @@ public class ViolationsController(ISender sender) : ControllerBase
         };
     }
 }
-
