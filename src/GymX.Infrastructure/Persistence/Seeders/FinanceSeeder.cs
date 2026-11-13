@@ -405,5 +405,70 @@ public static class FinanceSeeder
             await context.Expenses.AddRangeAsync(expenses);
             await context.SaveChangesAsync();
         }
+
+        if (!await context.KpiTemplates.AnyAsync())
+        {
+            var kpiTemplates = new List<KpiTemplate>
+            {
+                KpiTemplate.Create(
+                    "HLV PT Chuyên Nghiệp",
+                    RoleCode.Trainer,
+                    25000000m,
+                    2500000m,
+                    30,
+                    null,
+                    "Áp dụng cho HLV cấp cao có từ 1 năm kinh nghiệm",
+                    KpiTemplateStatus.Active),
+                KpiTemplate.Create(
+                    "HLV PT Cơ Bản",
+                    RoleCode.Trainer,
+                    15000000m,
+                    1500000m,
+                    20,
+                    null,
+                    "Áp dụng cho HLV mới hoặc thực tập sinh sàn tập",
+                    KpiTemplateStatus.Active),
+                KpiTemplate.Create(
+                    "Lễ Tân Quầy Xuất Sắc",
+                    RoleCode.Receptionist,
+                    15000000m,
+                    1500000m,
+                    null,
+                    15,
+                    "Áp dụng cho nhân viên quầy đón tiếp và mở thẻ hội viên",
+                    KpiTemplateStatus.Active)
+            };
+
+            await context.KpiTemplates.AddRangeAsync(kpiTemplates);
+            await context.SaveChangesAsync();
+        }
+
+        var desyncedKpis = await context.EmployeeKpis
+            .Include(k => k.KpiTemplate)
+            .Where(k => k.KpiTemplate != null)
+            .ToListAsync();
+
+        var hasChanges = false;
+        foreach (var kpi in desyncedKpis)
+        {
+            if (kpi.TargetRevenue != kpi.KpiTemplate.TargetRevenue ||
+                kpi.TargetBonusAmount != kpi.KpiTemplate.TargetBonusAmount ||
+                kpi.TargetPtSessions != kpi.KpiTemplate.TargetPtSessions ||
+                kpi.TargetNewMembers != kpi.KpiTemplate.TargetNewMembers)
+            {
+                kpi.UpdateTargets(
+                    kpi.KpiTemplate.TargetRevenue,
+                    kpi.KpiTemplate.TargetBonusAmount,
+                    kpi.KpiTemplate.TargetPtSessions,
+                    kpi.KpiTemplate.TargetNewMembers,
+                    kpi.Note);
+                hasChanges = true;
+            }
+        }
+
+        if (hasChanges)
+        {
+            await context.SaveChangesAsync();
+        }
     }
 }
