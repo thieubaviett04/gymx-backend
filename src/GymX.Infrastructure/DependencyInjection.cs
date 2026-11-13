@@ -64,6 +64,8 @@ namespace GymX.Infrastructure
             services.AddScoped<ISalaryFormulaRepository, SalaryFormulaRepository>();
             services.AddScoped<IPayrollRepository, PayrollRepository>();
             services.AddScoped<IPayrollBonusRepository, PayrollBonusRepository>();
+            services.AddScoped<IKpiTemplateRepository, KpiTemplateRepository>();
+            services.AddScoped<IEmployeeKpiRepository, EmployeeKpiRepository>();
             services.AddScoped<IFinancialAnalyticsRepository, FinancialAnalyticsRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<INotificationService, NotificationService>();

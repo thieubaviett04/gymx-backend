@@ -158,4 +158,70 @@ public static class EmailTemplates
 </body>
 </html>";
     }
+
+    public static string BuildKpiAssignmentEmail(string fullName, int month, int year, string templateName, int? ptSessions, decimal targetRevenue, decimal bonusAmount, string? note)
+    {
+        return $@"<!DOCTYPE html>
+<html lang=""vi"">
+<head>
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <title>Thông báo Giao chỉ tiêu KPI Tháng {month}/{year}</title>
+    <link rel=""preconnect"" href=""https://fonts.googleapis.com"">
+    <link rel=""preconnect"" href=""https://fonts.gstatic.com"" crossorigin>
+    <link href=""https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"" rel=""stylesheet"">
+    <style>
+        body, table, td, p, h2, div, span {{
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }}
+    </style>
+</head>
+<body style=""margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"">
+    <table role=""presentation"" border=""0"" cellpadding=""0"" cellspacing=""0"" width=""100%"" style=""background-color: #f8fafc; padding: 40px 16px;"">
+        <tr>
+            <td align=""center"">
+                <table role=""presentation"" border=""0"" cellpadding=""0"" cellspacing=""0"" width=""100%"" style=""max-width: 520px; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;"">
+                    <tr>
+                        <td style=""padding: 36px 36px 12px 36px; text-align: center;"">
+                            <div style=""display: inline-block;"">
+                                <span style=""font-size: 26px; font-weight: 900; color: #064343;"">Gym</span><span style=""font-size: 26px; font-weight: 900; color: #7AA900;"">Fitness</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style=""padding: 12px 36px 36px 36px;"">
+                            <h2 style=""margin: 0 0 16px 0; color: #0f172a; font-size: 20px; font-weight: 700;"">
+                                Thông báo Giao chỉ tiêu KPI Tháng {month}/{year}
+                            </h2>
+                            <p style=""margin: 0 0 12px 0; font-size: 14px; color: #334155; line-height: 1.6;"">
+                                Xin chào <b>{fullName}</b>,
+                            </p>
+                            <p style=""margin: 0 0 16px 0; font-size: 14px; color: #475569; line-height: 1.6;"">
+                                Bạn vừa được Ban Quản trị giao chỉ tiêu KPI công việc tháng {month}/{year}:
+                            </p>
+                            <div style=""background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 20px;"">
+                                <p style=""margin: 0 0 8px 0; font-size: 13px; color: #334155;""><b>Mẫu KPI:</b> {templateName}</p>
+                                {(ptSessions.HasValue ? $@"<p style=""margin: 0 0 8px 0; font-size: 13px; color: #334155;""><b>Chỉ tiêu buổi PT:</b> {ptSessions.Value} buổi</p>" : "")}
+                                <p style=""margin: 0 0 8px 0; font-size: 13px; color: #334155;""><b>Chỉ tiêu doanh số:</b> {targetRevenue:N0} ₫</p>
+                                <p style=""margin: 0 0 8px 0; font-size: 13px; color: #334155;""><b>Thưởng định mức:</b> {bonusAmount:N0} ₫</p>
+                                {(!string.IsNullOrWhiteSpace(note) ? $@"<p style=""margin: 8px 0 0 0; font-size: 12px; color: #64748b; font-style: italic;"">Lời dặn: {note}</p>" : "")}
+                            </div>
+                            <p style=""margin: 0; font-size: 13px; color: #475569;"">
+                                Vui lòng đăng nhập vào ứng dụng để theo dõi tiến độ công việc hàng ngày.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style=""background-color: #f8fafc; padding: 20px 36px; border-top: 1px solid #e2e8f0; text-align: center;"">
+                            <p style=""margin: 0 0 4px 0; font-size: 12px; color: #64748b;"">Ban Quản Trị GymFitness</p>
+                            <p style=""margin: 0; font-size: 11px; color: #94a3b8;"">&copy; 2026 GymFitness. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+    }
 }

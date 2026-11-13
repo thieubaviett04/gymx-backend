@@ -1,6 +1,7 @@
 using GymX.Application.Common.Interfaces.Repositories;
 using GymX.Application.Modules.Employees.DTOs.Response;
 using GymX.Domain.Common.Models;
+using GymX.Domain.Constants;
 using GymX.Domain.Entities.Employees;
 using GymX.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -184,5 +185,13 @@ public class EmployeeRepository(ApplicationDbContext context) : GenericRepositor
             };
 
         return await query.FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<List<Employee>> GetActiveByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        var idList = ids.ToList();
+        return await DbSet
+            .Where(e => idList.Contains(e.Id) && !e.IsDeleted && e.EmploymentStatus == EmployeeStatus.Active)
+            .ToListAsync(cancellationToken);
     }
 }

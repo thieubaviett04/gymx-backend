@@ -19,4 +19,5 @@ public interface IEmployeeRepository : IGenericRepository<Employee>
         CancellationToken cancellationToken = default);
     Task<EmployeeDetailDto?> GetEmployeeDetailByIdAsync(Guid employeeId, CancellationToken cancellationToken = default);
     Task<EmployeeProfileDto?> GetProfileByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<List<Employee>> GetActiveByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default);
 }
