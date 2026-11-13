@@ -262,7 +262,36 @@ public static class FinanceSeeder
             }
         }
 
-        var invoiceSeq = 8000;
+        var badInvoices = await context.Invoices
+            .Where(i => i.CustomerName != null && (i.CustomerName.Contains("Gói tập") || i.CustomerName.Contains("Buổi tập")))
+            .ToListAsync();
+        if (badInvoices.Count > 0)
+        {
+            var badIds = badInvoices.Select(i => i.Id).ToList();
+            var oldPayments = await context.Payments.Where(p => badIds.Contains(p.InvoiceId)).ToListAsync();
+            context.Payments.RemoveRange(oldPayments);
+            context.Invoices.RemoveRange(badInvoices);
+            await context.SaveChangesAsync();
+        }
+
+        var firstMember = await context.Members.FirstOrDefaultAsync();
+        var customerPool = new (string name, string phone, Guid? memberId)[]
+        {
+            ("Nguyễn Thị Thân", "0912345678", firstMember?.Id),
+            ("Nguyễn Hoàng Nam", "0912345001", null),
+            ("Trần Thị Mai", "0912345002", null),
+            ("Lê Quốc Bảo", "0912345003", null),
+            ("Đặng Thùy Trang", "0912345004", null),
+            ("Phạm Minh Đức", "0912345005", null),
+            ("Vũ Hải Yến", "0912345006", null),
+            ("Hoàng Gia Huy", "0912345007", null),
+            ("Bùi Phương Linh", "0912345008", null),
+            ("Đỗ Tuấn Kiệt", "0912345009", null),
+            ("Ngô Bảo Ngọc", "0912345010", null)
+        };
+
+        var existingInvNumbers = (await context.Invoices.Select(i => i.InvoiceNumber).ToListAsync()).ToHashSet();
+        var invoiceSeq = Math.Max(8000, context.Invoices.Count() + 10000);
         foreach (var emp in employees)
         {
             profiles.TryGetValue(emp.EmployeeCode, out var profile);
@@ -275,31 +304,73 @@ public static class FinanceSeeder
             if (existingRevenue < targetRevenue)
             {
                 var neededRevenue = targetRevenue - existingRevenue;
-                var invoiceCount = Math.Max(1, (int)(neededRevenue / 5000000m));
+                var invoiceCount = Math.Max(2, (int)(neededRevenue / 4000000m));
                 var perInvoice = Math.Round(neededRevenue / invoiceCount, 0);
 
                 var empInvoices = new List<Invoice>();
+                var empPayments = new List<Payment>();
+
                 for (var k = 0; k < invoiceCount; k++)
                 {
-                    var day = ((k * 3) % 25) + 1;
+                    var day = ((k * 3 + invoiceSeq) % 25) + 1;
                     var invDate = new DateOnly(todayVn.Year, todayVn.Month, day);
                     var issuedAt = invDate.ToDateTime(new TimeOnly(10, 30), DateTimeKind.Utc).AddHours(-7);
                     var invNumber = $"INV-{invDate:yyyyMMdd}-{invoiceSeq++:D4}";
+                    while (existingInvNumbers.Contains(invNumber))
+                    {
+                        invNumber = $"INV-{invDate:yyyyMMdd}-{invoiceSeq++:D4}";
+                    }
+                    existingInvNumbers.Add(invNumber);
 
-                    var refType = emp.Position == "TRAINER" ? "PT_SESSION" : "PACKAGE";
-                    empInvoices.Add(Invoice.CreatePaid(
+                    string refType;
+                    if (emp.Position == "TRAINER")
+                    {
+                        refType = (k % 4 == 0) ? InvoiceReferenceType.Package : InvoiceReferenceType.PtSession;
+                    }
+                    else
+                    {
+                        refType = (k % 4) switch
+                        {
+                            0 => InvoiceReferenceType.Package,
+                            1 => InvoiceReferenceType.DayTicket,
+                            2 => InvoiceReferenceType.ServiceFee,
+                            _ => InvoiceReferenceType.Other
+                        };
+                    }
+
+                    var cust = customerPool[(k + invoiceSeq) % customerPool.Length];
+                    var invoice = Invoice.CreatePaid(
                         invNumber,
                         refType,
                         Guid.NewGuid(),
                         perInvoice,
                         perInvoice,
                         issuedAt,
-                        null,
-                        emp.Position == "TRAINER" ? "Gói tập kèm PT cá nhân" : "Gói tập hội viên GymX",
-                        "0912345678",
+                        cust.memberId,
+                        cust.name,
+                        cust.phone,
+                        emp.UserId);
+
+                    empInvoices.Add(invoice);
+
+                    var paymentMethod = (k % 3) switch
+                    {
+                        0 => "Tiền mặt",
+                        1 => "Chuyển khoản",
+                        _ => "Thẻ POS"
+                    };
+
+                    empPayments.Add(Payment.CreateSuccess(
+                        invoice.Id,
+                        paymentMethod,
+                        perInvoice,
+                        issuedAt,
+                        $"PAY-{invNumber}",
                         emp.UserId));
                 }
+
                 await context.Invoices.AddRangeAsync(empInvoices);
+                await context.Payments.AddRangeAsync(empPayments);
                 await context.SaveChangesAsync();
             }
         }
@@ -375,34 +446,64 @@ public static class FinanceSeeder
             }
         }
 
-        if (!await context.Expenses.AnyAsync())
+        var existingExpenses = await context.Expenses.ToListAsync();
+        foreach (var exp in existingExpenses)
         {
-            var expenses = new List<Expense>
+            if (!ExpenseCategory.IsValid(exp.Category))
             {
-                Expense.Create(
-                    "EXP-202611-0001",
-                    ExpenseCategory.Rent,
-                    10000000m,
-                    todayVn.AddDays(-5),
-                    "Chi phí thuê mặt bằng phòng gym kỳ này",
-                    adminId),
-                Expense.Create(
-                    "EXP-202611-0002",
-                    ExpenseCategory.Utilities,
-                    2500000m,
-                    todayVn.AddDays(-3),
-                    "Thanh toán tiền điện và nước tháng này",
-                    adminId),
-                Expense.Create(
-                    "EXP-202611-0003",
-                    ExpenseCategory.Maintenance,
-                    1200000m,
-                    todayVn.AddDays(-1),
-                    "Bảo dưỡng định kỳ dàn máy chạy bộ phòng tạ",
-                    adminId)
-            };
+                context.Entry(exp).Property(e => e.Category).CurrentValue = ExpenseCategory.Other;
+            }
+        }
+        await context.SaveChangesAsync();
 
-            await context.Expenses.AddRangeAsync(expenses);
+        var existingCategories = await context.Expenses.Select(e => e.Category).Distinct().ToListAsync();
+        var expensesToAdd = new List<Expense>();
+        var expPrefix = $"EXP-{todayVn:yyyyMM}-";
+        var existingCodes = await context.Expenses.Select(e => e.ExpenseCode).ToListAsync();
+        var existingCodeSet = new HashSet<string>(existingCodes, StringComparer.OrdinalIgnoreCase);
+        var expSeq = 1;
+
+        string GetNextExpenseCode()
+        {
+            while (true)
+            {
+                var code = $"{expPrefix}{expSeq:D4}";
+                expSeq++;
+                if (!existingCodeSet.Contains(code))
+                {
+                    existingCodeSet.Add(code);
+                    return code;
+                }
+            }
+        }
+
+        var sampleDefinitions = new (string category, decimal amount, int daysAgo, string description)[]
+        {
+            (ExpenseCategory.Rent, 15000000m, 5, "Chi phí thuê mặt bằng phòng gym kỳ này"),
+            (ExpenseCategory.Utilities, 2500000m, 3, "Thanh toán tiền điện, nước và internet tháng này"),
+            (ExpenseCategory.Maintenance, 1200000m, 2, "Bảo dưỡng định kỳ dàn máy chạy bộ phòng tạ"),
+            (ExpenseCategory.Equipment, 5000000m, 1, "Mua sắm bổ sung tạ tay và phụ kiện tập luyện"),
+            (ExpenseCategory.Other, 800000m, 1, "Mua khăn tập, nước uống và vật tư vệ sinh")
+        };
+
+        foreach (var def in sampleDefinitions)
+        {
+            if (!existingCategories.Contains(def.category))
+            {
+                expensesToAdd.Add(Expense.Create(
+                    GetNextExpenseCode(),
+                    def.category,
+                    def.amount,
+                    todayVn.AddDays(-def.daysAgo),
+                    def.description,
+                    adminId));
+                existingCategories.Add(def.category);
+            }
+        }
+
+        if (expensesToAdd.Count > 0)
+        {
+            await context.Expenses.AddRangeAsync(expensesToAdd);
             await context.SaveChangesAsync();
         }
     }

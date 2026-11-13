@@ -6,9 +6,6 @@ public static class ExpenseCategory
     public const string Utilities = "UTILITIES";
     public const string Maintenance = "MAINTENANCE";
     public const string Equipment = "EQUIPMENT";
-    public const string Supplies = "SUPPLIES";
-    public const string Marketing = "MARKETING";
-    public const string Salary = "SALARY";
     public const string Other = "OTHER";
 
     public static readonly IReadOnlyCollection<string> All =
@@ -17,9 +14,6 @@ public static class ExpenseCategory
         Utilities,
         Maintenance,
         Equipment,
-        Supplies,
-        Marketing,
-        Salary,
         Other
     ];
 

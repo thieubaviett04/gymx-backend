@@ -336,11 +336,14 @@ public class FinancialAnalyticsRepository(ApplicationDbContext context) : IFinan
             {
                 var categoryName = group.Key switch
                 {
-                    "PACKAGE" => "Gói tập hội viên",
-                    "PT_SESSION" => "Huấn luyện viên kèm riêng (PT)",
-                    "DAY_TICKET" => "Vé tập vãng lai theo ngày",
-                    "GENERAL" => "Dịch vụ phòng tập chung",
-                    _ => group.Key
+                    InvoiceReferenceType.Package => "Gói tập hội viên",
+                    InvoiceReferenceType.PtSession => "Dịch vụ PT 1:1",
+                    InvoiceReferenceType.DayTicket => "Vé tập theo ngày",
+                    InvoiceReferenceType.ServiceFee => "Phí dịch vụ & Tiện ích",
+                    InvoiceReferenceType.Other => "Bán lẻ & Thu khác",
+                    "PT_PACKAGE" => "Dịch vụ PT 1:1",
+                    "GENERAL" => "Bán lẻ & Thu khác",
+                    _ => "Bán lẻ & Thu khác"
                 };
 
                 var revenue = group.Sum(x => (decimal)x.TotalAmount);
