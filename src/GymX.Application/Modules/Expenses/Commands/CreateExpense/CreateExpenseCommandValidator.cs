@@ -16,8 +16,8 @@ public sealed class CreateExpenseCommandValidator : AbstractValidator<CreateExpe
 
         RuleFor(x => x.ExpenseDate)
             .NotEmpty().WithMessage("Ngày phát sinh chi phí không được để trống.")
-            .Must(date => date <= DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)))
-            .WithMessage("Ngày phát sinh chi phí không được vượt quá ngày hiện tại.");
+            .Must(date => date <= DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)).AddMonths(1))
+            .WithMessage("Ngày phát sinh chi phí không được vượt quá 1 tháng tới.");
 
         RuleFor(x => x.Description)
             .NotEmpty().WithMessage("Nội dung chi phí không được để trống.")

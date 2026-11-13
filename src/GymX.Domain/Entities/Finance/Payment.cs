@@ -28,6 +28,20 @@ public class Payment : EntityAuditBase
         };
     }
 
+    public static Payment CreateSuccess(Guid invoiceId, string method, decimal amount, DateTime paidAt, string? gatewayTransactionRef = null, Guid? receivedBy = null)
+    {
+        return new Payment
+        {
+            InvoiceId = invoiceId,
+            Method = method,
+            Amount = amount,
+            GatewayTransactionRef = gatewayTransactionRef,
+            ReceivedBy = receivedBy,
+            Status = PaymentTransactionStatus.Success,
+            PaidAt = paidAt
+        };
+    }
+
     public void MarkAsSuccess()
     {
         Status = PaymentTransactionStatus.Success;
