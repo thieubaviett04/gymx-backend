@@ -6,41 +6,53 @@ public static class EmployeeFaceErrors
 {
     public static readonly Error EmployeeNotFound = Error.NotFound(
         "Employee.NotFound",
-        "Không tìm thấy thông tin nhân viên.");
+        "Không tìm thấy nhân viên.");
 
     public static readonly Error FaceDataNotFound = Error.NotFound(
         "FaceData.NotFound",
-        "Nhân viên chưa đăng ký dữ liệu khuôn mặt.");
+        "Nhân viên chưa đăng ký FaceID.");
 
     public static readonly Error NoFaceFound = Error.Validation(
         "FaceRecognition.NoFaceFound",
-        "Không tìm thấy khuôn mặt nào trong ảnh. Vui lòng chụp lại với ánh sáng tốt hơn.");
+        "Không tìm thấy khuôn mặt trong ảnh.");
 
     public static readonly Error MultipleFacesDetected = Error.Validation(
         "FaceRecognition.MultipleFacesDetected",
-        "Phát hiện nhiều hơn một khuôn mặt trong ảnh. Vui lòng chỉ chụp một khuôn mặt duy nhất.");
+        "Phát hiện nhiều khuôn mặt trong ảnh.");
 
     public static readonly Error InvalidFileFormat = Error.Validation(
         "FaceRegistration.InvalidFileFormat",
-        "Định dạng tệp không hợp lệ. Chỉ chấp nhận các định dạng ảnh JPG, JPEG, PNG, WEBP.");
+        "Định dạng ảnh không hợp lệ (JPG, PNG).");
 
     public static readonly Error FileTooLarge = Error.Validation(
         "FaceRegistration.FileTooLarge",
-        "Dung lượng tệp ảnh không được vượt quá 5MB.");
+        "Dung lượng ảnh vượt quá 5MB.");
 
     public static readonly Error FileEmpty = Error.Validation(
         "FaceRegistration.FileEmpty",
-        "Vui lòng chọn tệp ảnh khuôn mặt để đăng ký.");
+        "Vui lòng chọn ảnh khuôn mặt.");
 
     public static readonly Error DetectFailed = Error.Failure(
         "FaceRecognition.DetectFailed",
-        "Lỗi phát hiện khuôn mặt từ dịch vụ Face++.");
+        "Không thể nhận diện khuôn mặt.");
 
     public static readonly Error AddFaceFailed = Error.Failure(
         "FaceRecognition.AddFaceFailed",
-        "Không thể lưu khuôn mặt vào hệ thống Face++.");
+        "Lỗi lưu dữ liệu khuôn mặt.");
 
     public static readonly Error ServiceUnavailable = Error.Failure(
         "FaceRecognition.ServiceUnavailable",
-        "Dịch vụ nhận diện khuôn mặt hiện không khả dụng. Vui lòng thử lại sau.");
+        "Dịch vụ FaceID tạm thời không khả dụng.");
+
+    public static readonly Error FaceAlreadyEnrolledToAnother = Error.Conflict(
+        "FaceRecognition.FaceAlreadyEnrolledToAnother",
+        "Khuôn mặt đã được đăng ký cho nhân viên khác.");
+
+    public static readonly Error FaceImageBlurry = Error.Validation(
+        "FaceRecognition.FaceImageBlurry",
+        "Ảnh bị mờ hoặc rung lắc. Vui lòng giữ yên.");
+
+    public static readonly Error FaceQualityLow = Error.Validation(
+        "FaceRecognition.FaceQualityLow",
+        "Chất lượng ảnh không đạt tiêu chuẩn.");
 }

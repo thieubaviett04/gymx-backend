@@ -40,6 +40,28 @@ public class RegisterEmployeeFaceCommandHandler(
         }
 
         var faceToken = faceResult.Value;
+
+        var otherActiveFaces = (await faceDataRepository.GetAllAsync(cancellationToken))
+            .Where(f => f.Status == "ACTIVE" && f.UserId != employee.UserId && !string.IsNullOrWhiteSpace(f.ExternalFaceId))
+            .ToList();
+
+        foreach (var otherFace in otherActiveFaces)
+        {
+            var compareResult = await faceRecognitionService.CompareFacesAsync(faceToken, otherFace.ExternalFaceId!, cancellationToken);
+            if (compareResult.IsSuccess && compareResult.Value >= 75.0)
+            {
+                var conflictingEmployee = await employeeRepository.GetByUserIdAsync(otherFace.UserId, cancellationToken);
+                var conflictingUser = await userRepository.GetByIdAsync(otherFace.UserId, cancellationToken);
+                var empInfo = conflictingEmployee is not null
+                    ? $"{conflictingEmployee.EmployeeCode} - {conflictingUser?.FullName ?? ""}"
+                    : conflictingUser?.FullName ?? "khác";
+
+                return Result.Failure<EmployeeFaceDetailDto>(Error.Conflict(
+                    "FaceRecognition.FaceAlreadyEnrolledToAnother",
+                    $"Khuôn mặt đã đăng ký cho {empInfo}."));
+            }
+        }
+
         Guid? enrolledBy = Guid.TryParse(currentUserService.UserId, out var adminId) ? adminId : null;
 
         var faceData = await faceDataRepository.GetByUserIdAsync(employee.UserId, cancellationToken);

@@ -651,15 +651,31 @@ public class FakeFaceRecognitionService : IFaceRecognitionService
 {
     public Result<string> RegisterResult { get; set; } = Result<string>.Success("test_face_token");
     public Result<string> IdentifyResult { get; set; } = Result<string>.Success("test_face_token");
+    public Result<double> CompareResult { get; set; } = Result<double>.Success(0.0);
 
     public Task<Result<string>> RegisterFaceAsync(byte[] imageBytes, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(RegisterResult);
     }
 
-    public Task<Result<string>> IdentifyFaceAsync(byte[] imageBytes, CancellationToken cancellationToken = default)
+    public Task<Result<string>> IdentifyFaceAsync(
+        byte[] imageBytes,
+        IEnumerable<string>? candidateFaceTokens = null,
+        CancellationToken cancellationToken = default)
     {
         return Task.FromResult(IdentifyResult);
+    }
+
+    public Task<Result<double>> CompareFacesAsync(
+        string faceToken1,
+        string faceToken2,
+        CancellationToken cancellationToken = default)
+    {
+        if (faceToken1 == faceToken2)
+        {
+            return Task.FromResult(Result<double>.Success(100.0));
+        }
+        return Task.FromResult(CompareResult);
     }
 }
 

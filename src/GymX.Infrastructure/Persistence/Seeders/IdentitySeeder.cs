@@ -69,11 +69,12 @@ public static class IdentitySeeder
         }
         else
         {
+            recUser.VerifyEmail();
             recUser.UpdatePassword(BCrypt.Net.BCrypt.HashPassword("Receptionist@123", 11));
             var recEmp = await context.Employees.FirstOrDefaultAsync(e => e.UserId == recUser.Id && !e.IsDeleted);
-            if (recEmp != null && recEmp.BaseSalaryRate > 6500000m)
+            if (recEmp != null)
             {
-                recEmp.UpdateInfo(recEmp.Position, 6500000m);
+                recEmp.UpdateInfo(recEmp.Position, 6500000m, EmployeeStatus.Active);
             }
             await context.SaveChangesAsync();
         }

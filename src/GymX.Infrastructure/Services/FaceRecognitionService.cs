@@ -43,14 +43,17 @@ public class FaceRecognitionService(
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Lỗi khi gọi Face++ AddFace nhưng face_token đã phát hiện thành công.");
+                logger.LogWarning(ex, "Lỗi khi gọi Face++ AddFace");
             }
         }
 
         return Result<string>.Success(temporaryFaceToken);
     }
 
-    public async Task<Result<string>> IdentifyFaceAsync(byte[] imageBytes, CancellationToken cancellationToken = default)
+    public async Task<Result<string>> IdentifyFaceAsync(
+        byte[] imageBytes,
+        IEnumerable<string>? candidateFaceTokens = null,
+        CancellationToken cancellationToken = default)
     {
         var detectResult = await DetectFaceAsync(imageBytes, cancellationToken);
         if (detectResult.IsFailure)
@@ -59,41 +62,111 @@ public class FaceRecognitionService(
         }
 
         var faceToken = detectResult.Value;
-        var searchUrl = $"{_options.BaseUrl}/facepp/v3/search";
 
-        using var searchContent = new MultipartFormDataContent();
-        searchContent.AddQuotedField("api_key", _options.ApiKey);
-        searchContent.AddQuotedField("api_secret", _options.ApiSecret);
-        searchContent.AddQuotedField("faceset_token", _options.FaceSetToken);
-        searchContent.AddQuotedField("face_token", faceToken);
+        var candidatesList = candidateFaceTokens?
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Distinct()
+            .ToList();
 
-        var searchResponse = await httpClient.PostAsync(searchUrl, searchContent, cancellationToken);
-        var searchResponseBody = await searchResponse.Content.ReadAsStringAsync(cancellationToken);
-
-        if (!searchResponse.IsSuccessStatusCode)
+        if (candidatesList is not null && candidatesList.Count > 0)
         {
-            logger.LogError("Face++ Search API error {StatusCode}: {Response}", (int)searchResponse.StatusCode, searchResponseBody);
-            return Result<string>.Failure(Error.Failure(
-                "FaceRecognition.SearchFailed",
-                $"Lỗi khi tìm kiếm khuôn mặt. Chi tiết: {searchResponseBody}"));
+            string? bestMatchToken = null;
+            double maxConfidence = 0;
+
+            foreach (var candidate in candidatesList)
+            {
+                var compareResult = await CompareFacesAsync(faceToken, candidate, cancellationToken);
+                if (compareResult.IsSuccess)
+                {
+                    var confidence = compareResult.Value;
+                    if (confidence > maxConfidence)
+                    {
+                        maxConfidence = confidence;
+                        bestMatchToken = candidate;
+                    }
+                }
+            }
+
+            const double confidenceThreshold = 82.0;
+            if (bestMatchToken is not null && maxConfidence >= confidenceThreshold)
+            {
+                logger.LogInformation("Khuôn mặt khớp {Token} với độ tin cậy {Confidence}% (vượt ngưỡng {Threshold}%)",
+                    bestMatchToken, maxConfidence, confidenceThreshold);
+                return Result<string>.Success(bestMatchToken);
+            }
+
+            logger.LogWarning("Không tìm thấy khuôn mặt khớp (Max confidence: {Confidence}%, Ngưỡng yêu cầu: {Threshold}%)",
+                maxConfidence, confidenceThreshold);
+            return Result<string>.Failure(EmployeeFaceErrors.NoFaceFound);
         }
 
-        using var doc = JsonDocument.Parse(searchResponseBody);
-        var results = doc.RootElement.GetProperty("results");
-
-        if (results.GetArrayLength() == 0)
+        if (!string.IsNullOrWhiteSpace(_options.FaceSetToken))
         {
-            logger.LogWarning("Face++ không tìm thấy khuôn mặt khớp trong FaceSet.");
-            return Result<string>.Failure(Error.NotFound(
-                "FaceRecognition.NotFound",
-                "Khuôn mặt này chưa được đăng ký trong hệ thống. Vui lòng liên hệ Lễ tân."));
+            var searchUrl = $"{_options.BaseUrl}/facepp/v3/search";
+
+            using var searchContent = new MultipartFormDataContent();
+            searchContent.AddQuotedField("api_key", _options.ApiKey);
+            searchContent.AddQuotedField("api_secret", _options.ApiSecret);
+            searchContent.AddQuotedField("faceset_token", _options.FaceSetToken);
+            searchContent.AddQuotedField("face_token", faceToken);
+
+            var searchResponse = await httpClient.PostAsync(searchUrl, searchContent, cancellationToken);
+            var searchResponseBody = await searchResponse.Content.ReadAsStringAsync(cancellationToken);
+
+            if (searchResponse.IsSuccessStatusCode)
+            {
+                using var doc = JsonDocument.Parse(searchResponseBody);
+                if (doc.RootElement.TryGetProperty("results", out var results) && results.GetArrayLength() > 0)
+                {
+                    var matchedFaceToken = results[0].GetProperty("face_token").GetString()!;
+                    var confidence = results[0].GetProperty("confidence").GetDouble();
+                    logger.LogInformation("Tìm thấy khuôn mặt khớp trong FaceSet. FaceToken: {Token}, Độ chính xác: {Confidence}%", matchedFaceToken, confidence);
+                    return Result<string>.Success(matchedFaceToken);
+                }
+            }
         }
 
-        var matchedFaceToken = results[0].GetProperty("face_token").GetString()!;
-        var confidence = results[0].GetProperty("confidence").GetDouble();
+        return Result<string>.Failure(EmployeeFaceErrors.NoFaceFound);
+    }
 
-        logger.LogInformation("Tìm thấy khuôn mặt khớp. FaceToken: {Token}, Độ chính xác: {Confidence}%", matchedFaceToken, confidence);
-        return Result<string>.Success(matchedFaceToken);
+    public async Task<Result<double>> CompareFacesAsync(
+        string faceToken1,
+        string faceToken2,
+        CancellationToken cancellationToken = default)
+    {
+        var compareUrl = $"{_options.BaseUrl}/facepp/v3/compare";
+
+        for (int retry = 0; retry < 3; retry++)
+        {
+            using var compareContent = new MultipartFormDataContent();
+            compareContent.AddQuotedField("api_key", _options.ApiKey);
+            compareContent.AddQuotedField("api_secret", _options.ApiSecret);
+            compareContent.AddQuotedField("face_token1", faceToken1);
+            compareContent.AddQuotedField("face_token2", faceToken2);
+
+            var response = await httpClient.PostAsync(compareUrl, compareContent, cancellationToken);
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                using var doc = JsonDocument.Parse(responseBody);
+                if (doc.RootElement.TryGetProperty("confidence", out var confProp))
+                {
+                    return Result<double>.Success(confProp.GetDouble());
+                }
+            }
+
+            if (responseBody.Contains("CONCURRENCY_LIMIT_EXCEEDED"))
+            {
+                await Task.Delay(400 * (retry + 1), cancellationToken);
+                continue;
+            }
+
+            logger.LogWarning("Face++ Compare error {StatusCode}: {Response}", (int)response.StatusCode, responseBody);
+            break;
+        }
+
+        return Result<double>.Failure(Error.Failure("FaceRecognition.CompareFailed", "Lỗi khi so sánh khuôn mặt"));
     }
 
     private async Task<Result<string>> DetectFaceAsync(byte[] imageBytes, CancellationToken cancellationToken)
@@ -103,6 +176,7 @@ public class FaceRecognitionService(
         using var detectContent = new MultipartFormDataContent();
         detectContent.AddQuotedField("api_key", _options.ApiKey);
         detectContent.AddQuotedField("api_secret", _options.ApiSecret);
+        detectContent.AddQuotedField("return_attributes", "blur,facequality");
         detectContent.AddQuotedFile("image_file", "face.jpg", imageBytes, "image/jpeg");
 
         var detectResponse = await httpClient.PostAsync(detectUrl, detectContent, cancellationToken);
@@ -111,9 +185,7 @@ public class FaceRecognitionService(
         if (!detectResponse.IsSuccessStatusCode)
         {
             logger.LogError("Face++ Detect API error {StatusCode}: {Response}", (int)detectResponse.StatusCode, detectResponseBody);
-            return Result<string>.Failure(Error.Failure(
-                "FaceRecognition.DetectFailed",
-                $"Lỗi kết nối tới dịch vụ Face++. Chi tiết: {detectResponseBody}"));
+            return Result<string>.Failure(EmployeeFaceErrors.DetectFailed);
         }
 
         using var doc = JsonDocument.Parse(detectResponseBody);
@@ -131,7 +203,54 @@ public class FaceRecognitionService(
             return Result<string>.Failure(EmployeeFaceErrors.MultipleFacesDetected);
         }
 
-        return Result<string>.Success(faces[0].GetProperty("face_token").GetString()!);
+        var face = faces[0];
+
+        if (face.TryGetProperty("attributes", out var attributes))
+        {
+            if (attributes.TryGetProperty("blur", out var blur))
+            {
+                var isBlurry = false;
+                if (blur.TryGetProperty("blurness", out var blurness) &&
+                    blurness.TryGetProperty("value", out var blurVal) &&
+                    blurness.TryGetProperty("threshold", out var blurThresh))
+                {
+                    if (blurVal.GetDouble() > blurThresh.GetDouble())
+                    {
+                        isBlurry = true;
+                    }
+                }
+
+                if (blur.TryGetProperty("motionblur", out var motion) &&
+                    motion.TryGetProperty("value", out var motionVal) &&
+                    motion.TryGetProperty("threshold", out var motionThresh))
+                {
+                    if (motionVal.GetDouble() > motionThresh.GetDouble())
+                    {
+                        isBlurry = true;
+                    }
+                }
+
+                if (isBlurry)
+                {
+                    logger.LogWarning("Face++ phát hiện ảnh bị mờ hoặc rung lắc.");
+                    return Result<string>.Failure(EmployeeFaceErrors.FaceImageBlurry);
+                }
+            }
+
+            if (attributes.TryGetProperty("facequality", out var facequality) &&
+                facequality.TryGetProperty("value", out var qualityVal) &&
+                facequality.TryGetProperty("threshold", out var qualityThresh))
+            {
+                if (qualityVal.GetDouble() < qualityThresh.GetDouble())
+                {
+                    logger.LogWarning("Face++ phát hiện chất lượng khuôn mặt thấp ({Quality} < {Threshold}).",
+                        qualityVal.GetDouble(), qualityThresh.GetDouble());
+                    return Result<string>.Failure(EmployeeFaceErrors.FaceQualityLow);
+                }
+            }
+        }
+
+        return Result<string>.Success(face.GetProperty("face_token").GetString()!);
     }
 }
 
@@ -158,5 +277,5 @@ internal static class MultipartFormDataContentExtensions
         };
         content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
         form.Add(content);
-     }
+    }
 }
