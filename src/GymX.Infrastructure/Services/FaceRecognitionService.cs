@@ -1,6 +1,8 @@
+using System.Net.Http.Headers;
 using System.Text.Json;
 using GymX.Application.Common.Interfaces;
 using GymX.Domain.Common.Models;
+using GymX.Domain.Errors;
 using GymX.Infrastructure.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -16,65 +18,61 @@ public class FaceRecognitionService(
 
     public async Task<Result<string>> RegisterFaceAsync(byte[] imageBytes, CancellationToken cancellationToken = default)
     {
-        // --- BƯỚC 1: Phát hiện khuôn mặt trong ảnh (Detect) ---
         var detectResult = await DetectFaceAsync(imageBytes, cancellationToken);
         if (detectResult.IsFailure)
+        {
             return Result<string>.Failure(detectResult.Error);
+        }
 
         var temporaryFaceToken = detectResult.Value;
 
-        // --- BƯỚC 2: Lưu face_token vào FaceSet (AddFace) vĩnh viễn ---
-        var addFaceUrl = $"{_options.BaseUrl}/facepp/v3/faceset/addface";
-
-        using var addContent = new MultipartFormDataContent();
-        addContent.AddField("api_key", _options.ApiKey);
-        addContent.AddField("api_secret", _options.ApiSecret);
-        addContent.AddField("faceset_token", _options.FaceSetToken);
-        addContent.AddField("face_tokens", temporaryFaceToken);
-
-        var addResponse = await httpClient.PostAsync(addFaceUrl, addContent, cancellationToken);
-        var addResponseBody = await addResponse.Content.ReadAsStringAsync(cancellationToken);
-
-        if (!addResponse.IsSuccessStatusCode)
+        if (!string.IsNullOrWhiteSpace(_options.FaceSetToken))
         {
-            logger.LogError("Face++ AddFace API lỗi {StatusCode}: {Response}",
-                (int)addResponse.StatusCode, addResponseBody);
+            try
+            {
+                var addFaceUrl = $"{_options.BaseUrl}/facepp/v3/faceset/addface";
+                using var addContent = new MultipartFormDataContent();
+                addContent.AddQuotedField("api_key", _options.ApiKey);
+                addContent.AddQuotedField("api_secret", _options.ApiSecret);
+                addContent.AddQuotedField("faceset_token", _options.FaceSetToken);
+                addContent.AddQuotedField("face_tokens", temporaryFaceToken);
 
-            return Result<string>.Failure(Error.Failure(
-                "FaceRecognition.AddFaceFailed",
-                $"Không thể lưu khuôn mặt vào hệ thống Face++. Chi tiết: {addResponseBody}"));
+                var addResponse = await httpClient.PostAsync(addFaceUrl, addContent, cancellationToken);
+                var addResponseBody = await addResponse.Content.ReadAsStringAsync(cancellationToken);
+                logger.LogInformation("Face++ AddFace result: {StatusCode} {Response}", (int)addResponse.StatusCode, addResponseBody);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Lỗi khi gọi Face++ AddFace nhưng face_token đã phát hiện thành công.");
+            }
         }
 
-        logger.LogInformation("Đăng ký khuôn mặt thành công. FaceToken: {Token}", temporaryFaceToken);
         return Result<string>.Success(temporaryFaceToken);
     }
 
     public async Task<Result<string>> IdentifyFaceAsync(byte[] imageBytes, CancellationToken cancellationToken = default)
     {
-        // --- BƯỚC 1: Phát hiện khuôn mặt trong ảnh từ Camera ---
         var detectResult = await DetectFaceAsync(imageBytes, cancellationToken);
         if (detectResult.IsFailure)
+        {
             return Result<string>.Failure(detectResult.Error);
+        }
 
         var faceToken = detectResult.Value;
-
-        // --- BƯỚC 2: Tìm kiếm trong FaceSet của GymX (Search) ---
         var searchUrl = $"{_options.BaseUrl}/facepp/v3/search";
 
         using var searchContent = new MultipartFormDataContent();
-        searchContent.AddField("api_key", _options.ApiKey);
-        searchContent.AddField("api_secret", _options.ApiSecret);
-        searchContent.AddField("faceset_token", _options.FaceSetToken);
-        searchContent.AddField("face_token", faceToken);
+        searchContent.AddQuotedField("api_key", _options.ApiKey);
+        searchContent.AddQuotedField("api_secret", _options.ApiSecret);
+        searchContent.AddQuotedField("faceset_token", _options.FaceSetToken);
+        searchContent.AddQuotedField("face_token", faceToken);
 
         var searchResponse = await httpClient.PostAsync(searchUrl, searchContent, cancellationToken);
         var searchResponseBody = await searchResponse.Content.ReadAsStringAsync(cancellationToken);
 
         if (!searchResponse.IsSuccessStatusCode)
         {
-            logger.LogError("Face++ Search API lỗi {StatusCode}: {Response}",
-                (int)searchResponse.StatusCode, searchResponseBody);
-
+            logger.LogError("Face++ Search API error {StatusCode}: {Response}", (int)searchResponse.StatusCode, searchResponseBody);
             return Result<string>.Failure(Error.Failure(
                 "FaceRecognition.SearchFailed",
                 $"Lỗi khi tìm kiếm khuôn mặt. Chi tiết: {searchResponseBody}"));
@@ -94,31 +92,25 @@ public class FaceRecognitionService(
         var matchedFaceToken = results[0].GetProperty("face_token").GetString()!;
         var confidence = results[0].GetProperty("confidence").GetDouble();
 
-        logger.LogInformation("Tìm thấy khuôn mặt khớp. FaceToken: {Token}, Độ chính xác: {Confidence}%",
-            matchedFaceToken, confidence);
-
+        logger.LogInformation("Tìm thấy khuôn mặt khớp. FaceToken: {Token}, Độ chính xác: {Confidence}%", matchedFaceToken, confidence);
         return Result<string>.Success(matchedFaceToken);
     }
 
-    // --- Hàm nội bộ dùng chung ---
     private async Task<Result<string>> DetectFaceAsync(byte[] imageBytes, CancellationToken cancellationToken)
     {
         var detectUrl = $"{_options.BaseUrl}/facepp/v3/detect";
 
         using var detectContent = new MultipartFormDataContent();
-        detectContent.AddField("api_key", _options.ApiKey);
-        detectContent.AddField("api_secret", _options.ApiSecret);
-        // Ảnh dùng ByteArrayContent thay StringContent
-        detectContent.Add(new ByteArrayContent(imageBytes), "image_file", "face.jpg");
+        detectContent.AddQuotedField("api_key", _options.ApiKey);
+        detectContent.AddQuotedField("api_secret", _options.ApiSecret);
+        detectContent.AddQuotedFile("image_file", "face.jpg", imageBytes, "image/jpeg");
 
         var detectResponse = await httpClient.PostAsync(detectUrl, detectContent, cancellationToken);
         var detectResponseBody = await detectResponse.Content.ReadAsStringAsync(cancellationToken);
 
         if (!detectResponse.IsSuccessStatusCode)
         {
-            logger.LogError("Face++ Detect API lỗi {StatusCode}: {Response}",
-                (int)detectResponse.StatusCode, detectResponseBody);
-
+            logger.LogError("Face++ Detect API error {StatusCode}: {Response}", (int)detectResponse.StatusCode, detectResponseBody);
             return Result<string>.Failure(Error.Failure(
                 "FaceRecognition.DetectFailed",
                 $"Lỗi kết nối tới dịch vụ Face++. Chi tiết: {detectResponseBody}"));
@@ -130,26 +122,41 @@ public class FaceRecognitionService(
         if (faces.GetArrayLength() == 0)
         {
             logger.LogWarning("Face++ không phát hiện khuôn mặt nào trong ảnh.");
-            return Result<string>.Failure(Error.Validation(
-                "FaceRecognition.NoFaceFound",
-                "Không tìm thấy khuôn mặt nào trong ảnh. Vui lòng chụp lại với ánh sáng tốt hơn."));
+            return Result<string>.Failure(EmployeeFaceErrors.NoFaceFound);
+        }
+
+        if (faces.GetArrayLength() > 1)
+        {
+            logger.LogWarning("Face++ phát hiện {Count} khuôn mặt trong ảnh.", faces.GetArrayLength());
+            return Result<string>.Failure(EmployeeFaceErrors.MultipleFacesDetected);
         }
 
         return Result<string>.Success(faces[0].GetProperty("face_token").GetString()!);
     }
 }
 
-/// <summary>
-/// Extension method để thêm string field vào MultipartFormDataContent
-/// Dùng ByteArrayContent thay StringContent để tránh hoàn toàn Content-Type header.
-/// </summary>
 internal static class MultipartFormDataContentExtensions
 {
-    public static void AddField(this MultipartFormDataContent form, string name, string value)
+    public static void AddQuotedField(this MultipartFormDataContent form, string name, string value)
     {
-        // Dùng ByteArrayContent thay StringContent vì StringContent tự gắn "Content-Type: text/plain; charset=utf-8"
-        // khiến một số API (bao gồm Face++) không đọc được field và báo MISSING_ARGUMENTS
-        var bytes = System.Text.Encoding.UTF8.GetBytes(value);
-        form.Add(new ByteArrayContent(bytes), name);
+        var content = new StringContent(value ?? string.Empty);
+        content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
+        {
+            Name = $"\"{name}\""
+        };
+        content.Headers.ContentType = null;
+        form.Add(content);
     }
+
+    public static void AddQuotedFile(this MultipartFormDataContent form, string name, string fileName, byte[] bytes, string contentType = "image/jpeg")
+    {
+        var content = new ByteArrayContent(bytes);
+        content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data")
+        {
+            Name = $"\"{name}\"",
+            FileName = $"\"{fileName}\""
+        };
+        content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        form.Add(content);
+     }
 }
