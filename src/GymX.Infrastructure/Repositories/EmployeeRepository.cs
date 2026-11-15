@@ -136,7 +136,8 @@ public class EmployeeRepository(ApplicationDbContext context) : GenericRepositor
                 TrainerSpecialization = x.SpecializationName,
                 TrainerExperienceYears = x.Trainer != null ? (short?)x.Trainer.ExperienceYears : null,
                 TrainerPricePerSession = x.Trainer != null ? (decimal?)x.Trainer.PricePerSession : null,
-                CreatedDate = x.Employee.CreatedDate
+                CreatedDate = x.Employee.CreatedDate,
+                HasFaceEnrolled = Context.FaceData.Any(f => f.UserId == x.User.Id && f.Status == "ACTIVE" && f.ExternalFaceId != null)
             })
             .ToListAsync(cancellationToken);
 

@@ -18,4 +18,5 @@ public class EmployeeSummaryDto
     public short? TrainerExperienceYears { get; set; }
     public decimal? TrainerPricePerSession { get; set; }
     public DateTime CreatedDate { get; set; }
+    public bool HasFaceEnrolled { get; set; }
 }

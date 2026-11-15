@@ -211,7 +211,7 @@ public class FinancialAnalyticsRepository(ApplicationDbContext context) : IFinan
     {
         var slots = new List<RevenueSlotDto>();
 
-        if (period.Equals("today", StringComparison.OrdinalIgnoreCase))
+        if (period.Equals("today", StringComparison.OrdinalIgnoreCase) || startDate == endDate)
         {
             for (var hour = 6; hour <= 21; hour++)
             {
